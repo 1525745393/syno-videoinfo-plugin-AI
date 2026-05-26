@@ -1,6 +1,6 @@
 # Makefile for Syno VideoInfo Plugin
 
-.PHONY: help test validate package clean
+.PHONY: help test validate package clean test-unit test-integration
 
 # 显示帮助
 help:
@@ -9,7 +9,9 @@ help:
 	@echo "可用命令："
 	@echo "  make help        - 显示此帮助信息"
 	@echo "  make validate    - 验证所有刮削源"
-	@echo "  make test        - 运行刮削测试"
+	@echo "  make test        - 运行所有测试"
+	@echo "  make test-unit   - 运行单元测试"
+	@echo "  make test-integration - 运行集成测试"
 	@echo "  make test-movie  - 测试电影刮削"
 	@echo "  make test-tv     - 测试电视剧刮削"
 	@echo "  make package     - 打包插件"
@@ -23,7 +25,7 @@ validate:
 	python scripts/validate_flows.py
 
 # 测试刮削
-test:
+test-scrape:
 	@echo "运行刮削测试..."
 	python main.py --type movie --input "{\"title\":\"--install\"}" --limit 1
 
@@ -88,3 +90,26 @@ list-flows:
 # 显示版本
 version:
 	@python -c "from version import version; print(version())"
+
+# 单元测试
+test-unit:
+	@echo "运行单元测试..."
+	@python -m pytest tests/test_utils.py -v 2>/dev/null || \
+	python -m unittest discover -s tests -p "test_*.py" -v
+
+# 集成测试
+test-integration:
+	@echo "运行集成测试..."
+	@python -m pytest tests/test_integration.py -v 2>/dev/null || \
+	python -m unittest tests.test_integration -v
+
+# 刮削源测试
+test-scrapeflows:
+	@echo "运行刮削源测试..."
+	@python -m pytest tests/test_scrapeflows.py -v 2>/dev/null || \
+	python -m unittest tests.test_scrapeflows -v
+
+# 所有测试
+test: test-unit test-integration test-scrapeflows
+	@echo ""
+	@echo "✅ 所有测试完成！"
