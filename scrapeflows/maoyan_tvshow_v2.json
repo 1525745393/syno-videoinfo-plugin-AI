@@ -1,0 +1,68 @@
+{
+  "type": "tvshow",
+  "site": "maoyan.com",
+  "doh_enabled": false,
+  "steps": [
+    {
+      "http": {
+        "url": "https://i.maoyan.com/apollo/ajax/search?kw={title}&cityId=1&stype=-1",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36",
+          "Referer": "https://i.maoyan.com/apollo/search?searchtype=movie&$from=maoyan"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "movie_ids": ["re_matches", "\"id\":(\\d+)"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "movie_ids",
+        "item": "movie_id",
+        "steps": [
+          {
+            "http": {
+              "url": "https://i.maoyan.com/film/{movie_id}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36"
+              },
+              "result": "detail_page"
+            }
+          },
+          {
+            "collect": {
+              "source": "detail_page",
+              "into": {
+                "tvshow": {
+                  "title": ["re_match", "name:'(.+?)'"],
+                  "original_available": ["re_match", "pubDate:'(.+?)'"],
+                  "summary": ["re_match", "description:'(.+?)'"],
+                  "genre": ["re_matches", "cat:'(.+?)'"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "img:'(.+?)'"],
+                      "rating": ["re_match", "score:(\\d+\\.?\\d*)"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "tvshow"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

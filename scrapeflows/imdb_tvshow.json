@@ -1,0 +1,73 @@
+{
+  "type": "tvshow",
+  "site": "imdb.com",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://v2.sg.media-imdb.com/suggestion/x/{title}.json",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "imdb_ids": ["re_matches", "\"id\":\"(tt\\d+)\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "imdb_ids",
+        "item": "imdb_id",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.omdbapi.com/?i={imdb_id}&apikey=trilogy",
+              "method": "GET",
+              "headers": {
+                "Accept": "application/json"
+              },
+              "timeout": 10,
+              "result": "detail_data"
+            }
+          },
+          {
+            "collect": {
+              "source": "detail_data",
+              "into": {
+                "tvshow": {
+                  "title": ["get", "Title"],
+                  "original_available": ["get", "Released"],
+                  "summary": ["get", "Plot"],
+                  "genre": ["re_matches", "Genre:\\s*(.+?)\\s*,"],
+                  "actor": ["re_matches", "Actors:\\s*(.+?)\\s*,"],
+                  "director": ["re_matches", "Director:\\s*(.+?)\\s*,"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["get", "Poster"],
+                      "rating": ["get", "imdbRating"],
+                      "imdb_id": ["get", "imdbID"],
+                      "year": ["get", "Year"],
+                      "type": ["get", "Type"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "tvshow"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

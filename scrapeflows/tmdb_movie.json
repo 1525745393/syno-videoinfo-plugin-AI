@@ -34,18 +34,18 @@
       "collect": {
         "source": "metadata",
         "into": {
-          "ids": "['xp_texts', './results//id']"
+          "movie_ids": ["get", "results"]
         }
       }
     },
     {
       "loop": {
-        "source": "ids",
-        "item": "id",
+        "source": "movie_ids",
+        "item": "movie_item",
         "steps": [
           {
             "http": {
-              "url": "https://api.tmdb.org/3/movie/{id}?api_key={$parent[apikey]}&language={$parent[lang]}&append_to_response=credits,release_dates",
+              "url": "https://api.tmdb.org/3/movie/{$parent[movie_item][id]}?api_key={$parent[apikey]}&language={$parent[lang]}&append_to_response=credits,release_dates",
               "method": "GET",
               "headers": {
                 "Accept": "application/json"
@@ -59,46 +59,41 @@
               "source": "subject",
               "into": {
                 "movie": {
-                  "title": "['xp_text', './title']",
-                  "tagline": "['xp_text', './tagline']",
-                  "original_available": "['xp_text', './release_date']",
-                  "summary": "['xp_text', './overview']",
-                  "certificate": "['re_match', '\"release_dates\":.*?\"US\".*?\"certification\":\"([^\"]*?)\"']",
-                  "genre": "['xp_texts', './genres//name']",
-                  "actor": "['xp_texts', './credits/cast//name']",
-                  "writer": "['re_matches', '\"name\":\"([^\"]*?)\"[^{{}}]*?\"department\":\"Writing\"']",
-                  "director": "['re_matches', '\"name\":\"([^\"]*?)\"[^{{}}]*?\"department\":\"Directing\"']",
+                  "title": ["get", "title"],
+                  "tagline": ["get", "tagline"],
+                  "original_available": ["get", "release_date"],
+                  "summary": ["get", "overview"],
+                  "certificate": ["re_match", "certification\":\"([^\"]*)\""],
+                  "genre": ["get", "genres"],
+                  "actor": ["get", "credits/cast"],
+                  "writer": ["re_matches", "\"name\":\"([^\"]*)\"[^{}]*?\"department\":\"Writing\""],
+                  "director": ["re_matches", "\"name\":\"([^\"]*)\"[^{}]*?\"department\":\"Directing\""],
                   "extra": {
                     "[plugin_id]": {
-                      "poster": [
-                        "['xp_text', './poster_path', 'prefix', 'https://image.tmdb.org/t/p/w500']"
-                      ],
-                      "backdrop": [
-                        "['xp_text', './backdrop_path', 'prefix', 'https://image.tmdb.org/t/p/original']"
-                      ],
+                      "poster": ["get", "poster_path"],
+                      "backdrop": ["get", "backdrop_path"],
+                      "rating": ["get", "vote_average"],
                       "reference": {
-                        "themoviedb": "['xp_text', './id', 'int']",
-                        "imdb": "['xp_text', './imdb_id']"
+                        "themoviedb": ["get", "id"],
+                        "imdb": ["get", "imdb_id"]
                       },
-                      "collection_id": {
-                        "themoviedb": "['xp_text', './belongs_to_collection/id', 'int']"
-                      }
+                      "collection_id": ["get", "belongs_to_collection/id"]
                     }
                   }
                 },
-                "rating": "['xp_text', './vote_average', 're_sub', '(\\d+\\.\\d)\\d*', '\\\\1']"
+                "rating_value": ["get", "vote_average"]
               }
             }
           },
           {
             "collect": {
-              "source": "rating",
+              "source": "rating_value",
               "into": {
                 "movie": {
                   "extra": {
                     "[plugin_id]": {
                       "rating": {
-                        "[plugin_id]": "['re_match', '(.*)', 'float']"
+                        "[plugin_id]": ["re_match", "(\\d+\\.\\d)"]
                       }
                     }
                   }

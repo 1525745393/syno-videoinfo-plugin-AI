@@ -17,18 +17,18 @@
       "collect": {
         "source": "search_result",
         "into": {
-          "subjects": ["get", "list"]
+          "bgm_ids": ["xp_texts", "//item[@type='subject']/@id"]
         }
       }
     },
     {
       "loop": {
-        "source": "subjects",
-        "item": "subject",
+        "source": "bgm_ids",
+        "item": "bgm_id",
         "steps": [
           {
             "http": {
-              "url": "https://api.bgm.tv/v0/subjects/{$parent[subject][id]}?responseGroup=large",
+              "url": "https://api.bgm.tv/v0/subjects/{bgm_id}?responseGroup=large",
               "method": "GET",
               "headers": {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -45,16 +45,12 @@
                   "originaltitle": ["get", "name_cn"],
                   "original_available": ["get", "air_date"],
                   "summary": ["get", "summary"],
-                  "genre": ["xp_texts", "./tags//name"],
+                  "genre": ["get", "tags"],
                   "extra": {
                     "[plugin_id]": {
                       "poster": ["get", "images/large"],
                       "rating": ["get", "rating/score"],
-                      "collection": {
-                        "wish": ["get", "collection/wish"],
-                        "collect": ["get", "collection/collect"],
-                        "doing": ["get", "collection/doing"]
-                      }
+                      "bgmid": "{bgm_id}"
                     }
                   }
                 }

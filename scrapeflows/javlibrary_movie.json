@@ -2,15 +2,24 @@
   "type": "movie",
   "site": "javlibrary.com",
   "doh_enabled": true,
+  "lang": ["cn", "tw", "ja"],
+  "config": {
+    "cookie": {
+      "icon": "key",
+      "name": "Cookie"
+    }
+  },
   "steps": [
     {
       "http": {
-        "url": "https://www.javlibrary.com/cn/vl_searchbyid.php?keyword={title}",
+        "url": "https://www.javlibrary.com/{lang}/vl_searchbyid.php?keyword={title}",
         "method": "GET",
         "headers": {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": "https://www.javlibrary.com/"
+          "Referer": "https://www.javlibrary.com/",
+          "Cookie": "{cookie}"
         },
+        "timeout": 15,
         "result": "search_result"
       }
     },
@@ -26,14 +35,17 @@
       "loop": {
         "source": "detail_urls",
         "item": "detail_url",
+        "iferr": "continue",
         "steps": [
           {
             "http": {
-              "url": "https://www.javlibrary.com/cn/{detail_url}",
+              "url": "https://www.javlibrary.com/{lang}/{detail_url}",
               "method": "GET",
               "headers": {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Cookie": "{cookie}"
               },
+              "timeout": 15,
               "result": "detail_page"
             }
           },

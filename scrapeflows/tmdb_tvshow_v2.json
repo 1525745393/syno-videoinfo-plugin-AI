@@ -1,0 +1,90 @@
+{
+  "type": "tvshow",
+  "site": "themoviedb.org",
+  "doh_enabled": true,
+  "config": {
+    "apikey": {
+      "icon": "key",
+      "name": "API Key"
+    }
+  },
+  "steps": [
+    {
+      "retval": {
+        "ifempty": "apikey"
+      }
+    },
+    {
+      "doh": {
+        "host": "api.tmdb.org"
+      }
+    },
+    {
+      "http": {
+        "url": "https://api.tmdb.org/3/search/tv?api_key={apikey}&language={lang}&query={title}&year={year}&page=1",
+        "method": "GET",
+        "headers": {
+          "Accept": "application/json"
+        },
+        "timeout": 20,
+        "result": "metadata"
+      }
+    },
+    {
+      "collect": {
+        "source": "metadata",
+        "into": {
+          "tv_ids": ["get", "results"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "tv_ids",
+        "item": "tv_item",
+        "steps": [
+          {
+            "http": {
+              "url": "https://api.tmdb.org/3/tv/{$parent[tv_item][id]}?api_key={$parent[apikey]}&language={$parent[lang]}",
+              "method": "GET",
+              "headers": {
+                "Accept": "application/json"
+              },
+              "timeout": 20,
+              "result": "subject"
+            }
+          },
+          {
+            "collect": {
+              "source": "subject",
+              "into": {
+                "tvshow": {
+                  "title": ["get", "name"],
+                  "original_available": ["get", "first_air_date"],
+                  "summary": ["get", "overview"],
+                  "genre": ["get", "genres"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["get", "poster_path"],
+                      "backdrop": ["get", "backdrop_path"],
+                      "rating": ["get", "vote_average"],
+                      "seasons": ["get", "number_of_seasons"],
+                      "episodes": ["get", "number_of_episodes"],
+                      "tmdb_id": ["get", "id"],
+                      "status": ["get", "status"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "tvshow"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
