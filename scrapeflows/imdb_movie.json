@@ -1,0 +1,81 @@
+{
+  "type": "movie",
+  "site": "imdb.com",
+  "doh_enabled": true,
+  "lang": ["en"],
+  "config": {
+    "api_key": {
+      "icon": "key",
+      "name": "OMDB API Key (可选)"
+    }
+  },
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.imdb.com/find?q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "movie_ids": ["re_matches", "href=\"(/title/tt[0-9]+)[^\"]*\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "movie_ids",
+        "item": "movie_id",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.imdb.com{movie_id}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "movie_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "movie_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "class=\"title\"[^>]*>([^<]+)</h1"],
+                  "originaltitle": ["re_match", "originalTitle[^>]*>([^<]+)</span"],
+                  "original_available": ["re_match", "titleYear[^>]+>([0-9]{4})</span"],
+                  "summary": ["re_match", "summary_text[^>]*>([^<]+)</span"],
+                  "genre": ["re_matches", "genre[^>]+>([^<]+)</a>"],
+                  "actor": ["re_matches", "stills_item[^>]+>([^<]+)</a>"],
+                  "director": ["re_matches", "credit_summary_item[^>]+>([^<]+)</a>"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "poster[^>]*src=\"([^\"]+)\""],
+                      "rating": ["re_match", "ratingValue[^>]+>([0-9.]+)</span>"],
+                      "imdb_id": ["re_match", "title/tt([0-9]+)\""]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

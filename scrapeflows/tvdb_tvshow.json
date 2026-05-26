@@ -1,0 +1,81 @@
+{
+  "type": "tvshow",
+  "site": "tvdb.com",
+  "doh_enabled": true,
+  "lang": ["en"],
+  "config": {
+    "api_key": {
+      "icon": "key",
+      "name": "API Key (可选)"
+    }
+  },
+  "steps": [
+    {
+      "http": {
+        "url": "https://thetvdb.com/search?query={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "show_links": ["re_matches", "href=\"(/series/[0-9]+[^\"]*)\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "show_links",
+        "item": "show_link",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://thetvdb.com{show_link}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "show_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "show_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "series-name[^>]+>([^<]+)</h1"],
+                  "originaltitle": ["re_match", "series-name[^>]+>([^<]+)</h1"],
+                  "original_available": ["re_match", "first-aired[^>]+>([^<]+)</span"],
+                  "summary": ["re_match", "overview[^>]*><p[^>]*>([^<]+)</p>"],
+                  "genre": ["re_matches", "genre[^>]+>([^<]+)</a>"],
+                  "actor": ["re_matches", "actor[^>]+>([^<]+)</a>"],
+                  "director": ["re_matches", "creator[^>]+>([^<]+)</a>"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "poster[^>]*src=\"([^\"]+)\""],
+                      "rating": ["re_match", "score[^>]+>([0-9.]+)</span>"],
+                      "status": ["re_match", "status[^>]+>([^<]+)</span"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

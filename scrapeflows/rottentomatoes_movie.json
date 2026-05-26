@@ -1,0 +1,81 @@
+{
+  "type": "movie",
+  "site": "rottentomatoes.com",
+  "doh_enabled": true,
+  "lang": ["en"],
+  "config": {
+    "api_key": {
+      "icon": "key",
+      "name": "API Key (可选)"
+    }
+  },
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.rottentomatoes.com/search?search={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9"
+        },
+        "timeout": 15,
+        "result": "search_results"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_results",
+        "into": {
+          "movie_ids": ["re_matches", "href=\"(/m/[^\"]+)\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "movie_ids",
+        "item": "movie_id",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.rottentomatoes.com{movie_id}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "movie_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "movie_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "scoreboard-title[^>]+>([^<]+)</h1"],
+                  "originaltitle": ["re_match", "scoreboard-title[^>]+>([^<]+)</h1"],
+                  "summary": ["re_match", "class=\"movie-info\"[^>]*><p[^>]*>([^<]+)</p>"],
+                  "genre": ["re_matches", "genre=\"([^\"]+)\""],
+                  "director": ["re_matches", "directed-by[^>]+>([^<]+)</a>"],
+                  "actor": ["re_matches", "actor=\"([^\"]+)\""],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "poster\">\\s*<img[^>]*src=\"([^\"]+)\""],
+                      "rating": ["re_match", "audience-score[^>]+>(\\d+)%<"],
+                      "tomatometer": ["re_match", "tomatometer[^>]+>(\\d+)%<"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

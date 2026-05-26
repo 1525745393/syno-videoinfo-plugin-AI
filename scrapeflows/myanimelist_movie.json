@@ -1,0 +1,83 @@
+{
+  "type": "movie",
+  "site": "myanimelist.net",
+  "doh_enabled": true,
+  "lang": ["en", "ja"],
+  "config": {
+    "api_client": {
+      "icon": "key",
+      "name": "API Client ID"
+    }
+  },
+  "steps": [
+    {
+      "http": {
+        "url": "https://myanimelist.net/search/all?q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "anime_ids": ["re_matches", "href=\"(/anime/[0-9]+[^\"]*)\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "anime_ids",
+        "item": "anime_id",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://myanimelist.net{anime_id}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "anime_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "anime_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "title-name[^>]+>([^<]+)</h1"],
+                  "originaltitle": ["re_match", "title-english[^>]+>([^<]+)</p"],
+                  "original_available": ["re_match", "Aired[^>]+>([^<]+)</span"],
+                  "summary": ["re_match", "synopsis[^>]*><p[^>]*>([^<]+)</p>"],
+                  "genre": ["re_matches", "genre[^>]+>([^<]+)</a>"],
+                  "actor": ["re_matches", "voice-actor[^>]+>([^<]+)</a>"],
+                  "director": ["re_matches", "staff[^>]*>([^<]+)</a>"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "img[^>]*itemprop=\"image\"[^>]*src=\"([^\"]+)\""],
+                      "rating": ["re_match", "score-label[^>]+>([0-9.]+)</span>"],
+                      "members": ["re_match", "members[^>]+>([0-9,]+)</span>"],
+                      "type": ["re_match", "type[^>]+>([^<]+)</span>"],
+                      "episodes": ["re_match", "episodes[^>]+>([^<]+)</span>"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

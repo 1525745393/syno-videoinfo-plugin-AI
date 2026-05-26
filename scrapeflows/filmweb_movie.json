@@ -1,0 +1,76 @@
+{
+  "type": "movie",
+  "site": "filmweb.pl",
+  "doh_enabled": true,
+  "lang": ["pl", "en"],
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.filmweb.pl/search?q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "movie_links": ["re_matches", "<a[^>]*href=\"(/film/[^\"]+)\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "movie_links",
+        "item": "movie_link",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.filmweb.pl{movie_link}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "movie_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "movie_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "filmTitle[^>]+>([^<]+)</h1"],
+                  "originaltitle": ["re_match", "originalTitle[^>]*>([^<]+)</span"],
+                  "original_available": ["re_match", "releaseDate[^>]+>(\\d{4}-\\d{2}-\\d{2})</"],
+                  "summary": ["re_match", "description[^>]*><p[^>]*>([^<]+)</p>"],
+                  "genre": ["re_matches", "genre[^>]+>([^<]+)</a>"],
+                  "actor": ["re_matches", "actorsList[^>]+>([^<]+)</a>"],
+                  "director": ["re_matches", "director[^>]+>([^<]+)</a>"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "poster[^>]*src=\"([^\"]+)\""],
+                      "rating": ["re_match", "rateValue[^>]+>([0-9.]+)</span>"],
+                      "votes": ["re_match", "rateCount[^>]+>([0-9,]+)</span>"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
