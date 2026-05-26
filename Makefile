@@ -1,6 +1,6 @@
 # Makefile for Syno VideoInfo Plugin
 
-.PHONY: help test validate package clean test-unit test-integration
+.PHONY: help test validate package clean test-unit test-integration check-health
 
 # 显示帮助
 help:
@@ -9,6 +9,7 @@ help:
 	@echo "可用命令："
 	@echo "  make help        - 显示此帮助信息"
 	@echo "  make validate    - 验证所有刮削源"
+	@echo "  make check-health - 刮削源健康检查"
 	@echo "  make test        - 运行所有测试"
 	@echo "  make test-unit   - 运行单元测试"
 	@echo "  make test-integration - 运行集成测试"
@@ -23,6 +24,11 @@ help:
 validate:
 	@echo "验证刮削源配置..."
 	python scripts/validate_flows.py
+
+# 刮削源健康检查
+check-health:
+	@echo "刮削源健康检查..."
+	python scripts/check_health.py
 
 # 测试刮削
 test-scrape:
