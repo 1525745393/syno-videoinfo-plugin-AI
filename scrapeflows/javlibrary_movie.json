@@ -1,0 +1,74 @@
+{
+  "type": "movie",
+  "site": "javlibrary.com",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.javlibrary.com/cn/vl_searchbyid.php?keyword={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://www.javlibrary.com/"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_urls": ["re_matches", "video_id=[a-zA-Z0-9]+"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "detail_urls",
+        "item": "detail_url",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.javlibrary.com/cn/{detail_url}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "result": "detail_page"
+            }
+          },
+          {
+            "collect": {
+              "source": "detail_page",
+              "into": {
+                "movie": {
+                  "title": ["xp_text", "//div[@id='video_title']/h3/a"],
+                  "originaltitle": ["xp_text", "//div[@id='video_title']/h3/a"],
+                  "original_available": ["xp_text", "//div[@id='video_date']/table/tr/td[@class='text']"],
+                  "summary": ["xp_text", "//div[@id='video_comments']"],
+                  "runtime": ["xp_text", "//div[@id='video_length']/table/tr/td/span[@class='text']"],
+                  "genre": ["xp_texts", "//div[@id='video_genres']/table/tr/td[@class='text']/span/a"],
+                  "actor": ["xp_texts", "//div[@id='video_cast']/table/tr/td[@class='text']/span/span[@class='star']/a"],
+                  "director": ["xp_texts", "//div[@id='video_director']/table/tr/td[@class='text']/span/a"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["xp_attr_src", "//img[@id='video_jacket_img']/@src"],
+                      "rating": ["xp_text", "//div[@id='video_review']/table/tr/td/span[@class='score']"],
+                      "publisher": ["xp_text", "//div[@id='video_label']/table/tr/td[@class='text']/span/a"],
+                      "studio": ["xp_text", "//div[@id='video_maker']/table/tr/td[@class='text']/span/a"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

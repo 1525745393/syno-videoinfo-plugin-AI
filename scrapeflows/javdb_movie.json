@@ -1,0 +1,74 @@
+{
+  "type": "movie",
+  "site": "javdb.com",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://javdb.com/search?q={title}&locale=zh",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_urls": ["re_matches", "/v/[A-Za-z0-9]+"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "detail_urls",
+        "item": "detail_url",
+        "steps": [
+          {
+            "http": {
+              "url": "https://javdb.com{ detail_url}?locale=zh",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "result": "detail_page"
+            }
+          },
+          {
+            "collect": {
+              "source": "detail_page",
+              "into": {
+                "movie": {
+                  "title": ["xp_text", "//h2[contains(@class,'title')]/strong[contains(@class,'current-title')]"],
+                  "originaltitle": ["xp_text", "//h2[contains(@class,'title')]/span[contains(@class,'origin-title')]"],
+                  "original_available": ["re_match", "date.*?(\\d{4}-\\d{2}-\\d{2})"],
+                  "summary": ["xp_text", "//div[contains(@class,'movie-description')]"],
+                  "runtime": ["re_match", "duration.*?(\\d+)"],
+                  "genre": ["xp_texts", "//*[@id='genres']/a"],
+                  "actor": ["xp_texts", "//span[contains(@class,'female')]/preceding-sibling::a"],
+                  "director": ["xp_texts", "//strong[contains(text(),'導演')]/../span/a"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["xp_attr_src", "//img[contains(@class,'video-cover')]/@src"],
+                      "rating": ["xp_text", "//span[contains(@class,'score-stars')]"],
+                      "publisher": ["xp_text", "//strong[contains(text(),'發行')]/../span/a"],
+                      "studio": ["xp_text", "//strong[contains(text(),'片商')]/../span/a"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

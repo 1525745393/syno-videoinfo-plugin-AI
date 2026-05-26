@@ -1,0 +1,70 @@
+{
+  "type": "movie",
+  "site": "missav.com",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://missav.ws/cn/search/{title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_urls": ["re_matches", "/[A-Za-z0-9_-]+/cn"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "detail_urls",
+        "item": "detail_url",
+        "steps": [
+          {
+            "http": {
+              "url": "https://missav.ws{detail_url}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "result": "detail_page"
+            }
+          },
+          {
+            "collect": {
+              "source": "detail_page",
+              "into": {
+                "movie": {
+                  "title": ["xp_attr_content", "//meta[@property='og:title']/@content"],
+                  "originaltitle": ["xp_attr_content", "//meta[@property='og:title']/@content"],
+                  "original_available": ["xp_attr_content", "//meta[@property='og:video:release_date']/@content"],
+                  "summary": ["xp_attr_content", "//meta[@property='og:description']/@content"],
+                  "genre": ["xp_texts", "//div[contains(@class,'text-secondary')]//a[contains(@href,'/genres/')]"],
+                  "actor": ["xp_texts", "//div[contains(@class,'text-secondary')]//a[contains(@href,'/actresses/')]"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["xp_attr_content", "//meta[@property='og:image']/@content"],
+                      "publisher": ["xp_text", "//strong[contains(text(),'發行商')]/../span/a"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
