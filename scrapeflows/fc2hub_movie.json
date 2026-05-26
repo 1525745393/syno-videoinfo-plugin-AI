@@ -1,11 +1,11 @@
 {
   "type": "movie",
-  "site": "bangumi.tv",
+  "site": "javten.com",
   "doh_enabled": true,
   "steps": [
     {
       "http": {
-        "url": "https://api.bgm.tv/search/subject/{title}?type=2&start=0&max_results=10",
+        "url": "https://javten.com/search?kw={title}",
         "method": "GET",
         "headers": {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -17,44 +17,40 @@
       "collect": {
         "source": "search_result",
         "into": {
-          "subjects": ["get", "list"]
+          "detail_urls": ["re_matches", "/fc2ppv/\\d+"]
         }
       }
     },
     {
       "loop": {
-        "source": "subjects",
-        "item": "subject",
+        "source": "detail_urls",
+        "item": "detail_url",
         "steps": [
           {
             "http": {
-              "url": "https://api.bgm.tv/v0/subjects/{$parent[subject][id]}?responseGroup=large",
+              "url": "https://javten.com{detail_url}",
               "method": "GET",
               "headers": {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
               },
-              "result": "detail_data"
+              "result": "detail_page"
             }
           },
           {
             "collect": {
-              "source": "detail_data",
+              "source": "detail_page",
               "into": {
                 "movie": {
-                  "title": ["get", "name"],
-                  "originaltitle": ["get", "name_cn"],
-                  "original_available": ["get", "air_date"],
-                  "summary": ["get", "summary"],
-                  "genre": ["xp_texts", "./tags//name"],
+                  "title": ["xp_text", "//h1/text()[2]"],
+                  "original_available": "",
+                  "summary": ["xp_text", "//div[@class='col des']"],
+                  "genre": ["xp_texts", "//p[@class='card-text']/a[contains(@href,'/tag/')]"],
                   "extra": {
                     "[plugin_id]": {
-                      "poster": ["get", "images/large"],
-                      "rating": ["get", "rating/score"],
-                      "collection": {
-                        "wish": ["get", "collection/wish"],
-                        "collect": ["get", "collection/collect"],
-                        "doing": ["get", "collection/doing"]
-                      }
+                      "poster": ["xp_attr_href", "//a[@data-fancybox='gallery']/@href"],
+                      "studio": ["xp_text", "//div[@class='col-8']"],
+                      "series": "FC2系列",
+                      "number": ["re_match", "FC2-?(\\d+)"]
                     }
                   }
                 }

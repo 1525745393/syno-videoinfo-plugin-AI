@@ -1,0 +1,48 @@
+{
+  "type": "movie",
+  "site": "mgstage.com",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.mgstage.com/product/product_detail/{title}/",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Cookie": "adc=1"
+        },
+        "result": "detail_page"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_page",
+        "into": {
+          "movie": {
+            "title": ["xp_text", "//*[@id='center_column']/div[1]/h1/text()"],
+            "original_available": ["xp_text", "//th[contains(text(),'配信開始日：')]/../td"],
+            "runtime": ["xp_text", "//th[contains(text(),'収録時間：')]/../td"],
+            "summary": ["xp_text", "//*[@id='introduction']/dd/p[1]"],
+            "genre": ["xp_texts", "//th[contains(text(),'ジャンル：')]/../td/a"],
+            "actor": ["xp_texts", "//th[contains(text(),'出演')]/../td/a"],
+            "director": [],
+            "extra": {
+              "[plugin_id]": {
+                "poster": ["xp_attr_href", "//a[@id='EnlargeImage']/@href"],
+                "studio": ["xp_text", "//th[contains(text(),'メーカー：')]/../td/a"],
+                "publisher": ["xp_text", "//th[contains(text(),'レーベル：')]/../td/a"],
+                "series": ["xp_text", "//th[contains(text(),'シリーズ：')]/../td/a"],
+                "number": ["xp_text", "//th[contains(text(),'品番：')]/../td/a"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "retval": {
+        "source": "movie"
+      }
+    }
+  ]
+}

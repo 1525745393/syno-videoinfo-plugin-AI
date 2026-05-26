@@ -1,0 +1,69 @@
+{
+  "type": "movie",
+  "site": "airav.cc",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.airav.cc/search?q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_urls": ["re_matches", "/video/[A-Za-z0-9_-]+"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "detail_urls",
+        "item": "detail_url",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.airav.cc{detail_url}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "result": "detail_page"
+            }
+          },
+          {
+            "collect": {
+              "source": "detail_page",
+              "into": {
+                "movie": {
+                  "title": ["xp_text", "//meta[@property='og:title']/@content"],
+                  "original_available": ["xp_attr_content", "//meta[@property='video:release_date']/@content"],
+                  "summary": ["xp_attr_content", "//meta[@property='og:description']/@content"],
+                  "genre": ["xp_texts", "//a[contains(@href,'/tags/')]"],
+                  "actor": ["xp_texts", "//a[contains(@href,'/actresses/')]"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["xp_attr_content", "//meta[@property='og:image']/@content"],
+                      "number": ["xp_attr_content", "//meta[@property='video:duration']/@content"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

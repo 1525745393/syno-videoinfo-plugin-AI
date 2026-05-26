@@ -1,0 +1,74 @@
+{
+  "type": "movie",
+  "site": "javdbapi.com",
+  "doh_enabled": true,
+  "config": {
+    "apiurl": {
+      "icon": "cloud",
+      "name": "API URL"
+    }
+  },
+  "steps": [
+    {
+      "retval": {
+        "ifempty": "apiurl"
+      }
+    },
+    {
+      "http": {
+        "url": "{apiurl}/movies?q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json"
+        },
+        "timeout": 20,
+        "result": "api_response"
+      }
+    },
+    {
+      "collect": {
+        "source": "api_response",
+        "into": {
+          "movie_data": ["get", "0"]
+        }
+      }
+    },
+    {
+      "collect": {
+        "source": "movie_data",
+        "into": {
+          "movie": {
+            "title": ["get", "title"],
+            "originaltitle": ["get", "title"],
+            "original_available": ["get", "release_date"],
+            "summary": ["get", "description"],
+            "runtime": ["get", "duration"],
+            "genre": ["get", "genres"],
+            "actor": ["get", "actresses"],
+            "director": ["get", "directors"],
+            "extra": {
+              "[plugin_id]": {
+                "poster": ["get", "frontcover_url"],
+                "thumb": ["get", "fullcover_url"],
+                "trailer": ["get", "sample_movie_url"],
+                "publisher": ["get", "label"],
+                "studio": ["get", "maker"],
+                "series": ["get", "series"],
+                "samples": ["get", "samples"],
+                "reference": {
+                  "javdbid": ["get", "universal_id"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "retval": {
+        "source": "movie"
+      }
+    }
+  ]
+}

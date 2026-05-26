@@ -1,0 +1,74 @@
+{
+  "type": "movie",
+  "site": "javbus.com",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.javbus.com/search/{title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_urls": ["re_matches", "/[A-Za-z0-9-]+"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "detail_urls",
+        "item": "detail_url",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.javbus.com{detail_url}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "result": "detail_page"
+            }
+          },
+          {
+            "collect": {
+              "source": "detail_page",
+              "into": {
+                "movie": {
+                  "title": ["xp_text", "//h3"],
+                  "original_available": ["xp_text", "//span[@property='v:initialReleaseDate']"],
+                  "runtime": ["xp_text", "//span[@property='v:runtime']"],
+                  "summary": ["xp_text", "//span[@property='v:summary']"],
+                  "genre": ["xp_texts", "//span[@property='v:genre']"],
+                  "actor": ["xp_texts", "//div[@class='star-name']/a"],
+                  "director": ["xp_texts", "//a[@rel='v:directedBy']"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["xp_attr_href", "//a[@class='bigImage']/@href"],
+                      "studio": ["xp_text", "//a[contains(@href,'/studio/')]"],
+                      "publisher": ["xp_text", "//a[contains(@href,'/label/')]"],
+                      "series": ["xp_text", "//a[contains(@href,'/series/')]"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

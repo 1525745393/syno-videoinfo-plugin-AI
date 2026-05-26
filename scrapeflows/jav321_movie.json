@@ -1,0 +1,64 @@
+{
+  "type": "movie",
+  "site": "jav321.com",
+  "doh_enabled": true,
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.jav321.com/search",
+        "method": "POST",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        "body": {
+          "sn": "{title}"
+        },
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "title": ["re_match", "<h3>(.+?) <small>"],
+          "number": ["re_match", "品番:</strong> (.+?) <br>"],
+          "actor": ["re_matches", "<a href=\"/star/[^\"]+\">([^<]+)</a>"],
+          "release": ["re_match", "配信開始日:</strong> ([0-9-]+)"],
+          "runtime": ["re_match", "収録時間:</strong> (\\d+) 分"],
+          "studio": ["xp_text", "//div[@class='col-md-9']/a[contains(@href,'/company/')]"],
+          "series": ["xp_text", "//div[@class='col-md-9']/a[contains(@href,'/series/')]"],
+          "cover": ["xp_attr_src", "//img[@class='img-responsive']/@src"]
+        }
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "movie": {
+            "title": "{$parent[title]}",
+            "original_available": "{$parent[release]}",
+            "runtime": "{$parent[runtime]}",
+            "actor": "{$parent[actor]}",
+            "director": ["xp_texts", "//div[@id='video_director']/table/tr/td[@class='text']/span/a"],
+            "extra": {
+              "[plugin_id]": {
+                "poster": "{$parent[cover]}",
+                "studio": "{$parent[studio]}",
+                "publisher": "{$parent[studio]}",
+                "series": "{$parent[series]}",
+                "number": "{$parent[number]}"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "retval": {
+        "source": "movie"
+      }
+    }
+  ]
+}
