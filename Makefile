@@ -1,5 +1,5 @@
 # Makefile for Syno VideoInfo Plugin
-.PHONY: help test validate package clean test-unit test-integration check-health setup-config benchmark list-flows version quality-report
+.PHONY: help test validate package clean test-unit test-integration check-health setup-config benchmark list-flows version quality-report source-list source-status source-search source-stats source-export
 
 # 显示帮助
 help:
@@ -23,6 +23,13 @@ help:
 	@echo "  make list-flows     - 列出所有刮削源"
 	@echo "  make version        - 显示版本号"
 	@echo "  make quality-report - 生成质量报告"
+	@echo ""
+	@echo "源管理命令："
+	@echo "  make source-list      - 列出所有源"
+	@echo "  make source-status    - 显示源健康状态"
+	@echo "  make source-search q=  - 搜索源 (make source-search q=jav)"
+	@echo "  make source-stats     - 显示统计信息"
+	@echo "  make source-export    - 导出配置"
 	@echo ""
 
 # 设置默认配置
@@ -49,7 +56,7 @@ validate:
 # 刮削源健康检查
 check-health:
 	@echo "刮削源健康检查..."
-	python scripts/check_health.py
+	python scripts/source_manager.py status
 
 # 测试刮削
 test-scrape:
@@ -119,7 +126,7 @@ print('=' * 80)
 package:
 	@echo "检查 git 标签..."
 	@if ! git describe --tags --match v[0-9]* >/dev/null 2>&1; then \
-		echo "错误: 请先创建 git 标签（例如 git tag v1.0.0）"; \
+		echo "错误: 请先创建 git 标签（例如 git tag v1.4.5）"; \
 		exit 1; \
 	fi
 	@echo "打包插件..."
@@ -139,6 +146,7 @@ clean:
 	rm -rf .cache/
 	rm -f scraper.log
 	rm -f benchmark_results.json
+	rm -f source_config.json
 	find . -name "*.pyc" -delete
 	@echo "清理完成"
 
@@ -203,6 +211,8 @@ print('  - scraper.ranking.SourceRanking - 刮削源评分系统')
 print('  - scraper.quality.DataQualityChecker - 数据质量评估')
 print('  - scraper.performance.PerformanceMonitor - 性能监控')
 print('  - scraper.logger.LogManager - 日志管理')
+print('  - scraper.monitor.SourceMonitor - 源监控系统')
+print('  - scraper.priority_manager.PriorityManager - 优先级管理')
 print()
 print('可用的测试命令：')
 print('  - make test-unit - 单元测试')
@@ -212,5 +222,35 @@ print('  - make benchmark - 性能基准测试')
 print('  - make validate - 刮削源验证')
 print('  - make check-health - 健康检查')
 print()
+print('源管理命令：')
+print('  - make source-list - 列出所有源')
+print('  - make source-status - 显示源健康状态')
+print('  - make source-stats - 显示统计信息')
+print()
 print('=' * 80)
 "
+
+# 源管理命令
+source-list:
+	@echo "刮削源列表..."
+	python scripts/source_manager.py list
+
+source-status:
+	@echo "源健康状态..."
+	python scripts/source_manager.py status
+
+source-search:
+	@if [ "$(q)" = "" ]; then \
+		echo "请提供搜索词，例如：make source-search q=jav"; \
+	else \
+		echo "搜索源：$(q)"; \
+		python scripts/source_manager.py search "$(q)"; \
+	fi
+
+source-stats:
+	@echo "源统计信息..."
+	python scripts/source_manager.py stats
+
+source-export:
+	@echo "导出配置..."
+	python scripts/source_manager.py export
