@@ -1,0 +1,21 @@
+{
+  "type": "movie",
+  "site": "7mmtv.sx",
+  "doh_enabled": false,
+  "lang": ["zh", "ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://www.7mmtv.sx/zh/searchform_search/all/index.html?search_keyword={title}&search_type=searchall&op=search", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//figure[@class='video-preview']/a/@href"]}}},
+    {"http": {"url": "{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//h1[contains(@class, 'fullvideo-title')]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"number": ["xp_text", "//div[@class='d-flex mb-4']/span/text()"]}}},
+    {"transform": {"expression": "title = title.replace(number, '').strip() if number else title"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//div[@class='fullvideo-idol']/span/a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["regex", "class=\"player-cover\" ><a><img src=\"([^\"]+)", "detail_content"]}}},
+    {"transform": {"expression": "cover_url = 'https://7mmtv.tv' + cover_url if cover_url and 'http' not in cover_url else cover_url"}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//div[@class='d-flex flex-wrap categories']/a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//span[contains(text(), '日期') or contains(text(), '発売日')]/following-sibling::*//text()"]}}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}"}}
+  ]
+}

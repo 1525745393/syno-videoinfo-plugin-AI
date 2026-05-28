@@ -1,0 +1,16 @@
+{
+  "type": "movie",
+  "site": "getchu.com (DMM)",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://www.getchu.com/soft.phtml?id={title.replace('GETCHU', '').replace('-', '').strip()}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//h1/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//meta[@property='og:image']/@content"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//span[contains(text(), '発売日')]/following-sibling::text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//span[contains(text(), 'メーカー')]/following-sibling::text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//span[contains(text(), '出演')]/following-sibling::text()"]}}},
+    {"retval": {"title": "{title}", "number": "GETCHU-{title.replace('GETCHU', '').replace('-', '').strip()}", "actors": ["split_csv", "{actor}"], "release": "{release}", "year": "{release[:4] if release else ''}", "studio": "{studio}", "thumb": "{cover_url}", "mosaic": "有码"}}
+  ]
+}

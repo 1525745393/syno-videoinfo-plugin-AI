@@ -1,0 +1,22 @@
+{
+  "type": "movie",
+  "site": "iqqtv",
+  "doh_enabled": false,
+  "lang": ["zh", "ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://iqq5.xyz/cn/search.php?kw={title}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//a[@class='ga_click']/@href"]}}},
+    {"http": {"url": "https://iqq5.xyz/cn{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//h1[@class='h4 b']/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"number": ["xp_attr", "//span[@class='truncate']/text()"]}}},
+    {"transform": {"expression": "title = title.replace(number, '').strip() if number else title"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//a[contains(@href, 'actor')]/span/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//meta[@property='og:image']/@content"]}}},
+    {"collect": {"source": "detail_content", "into": {"outline": ["xp_text", "//div[contains(@class, 'intro')]//p//text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//div[contains(@class,'tag-info')]//a[contains(@href, 'tag')]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//div[@class='date']/text()"]}}},
+    {"transform": {"expression": "release = release.replace('/', '-').strip() if release else ''"}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "outline": "{outline}", "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}", "mosaic": "有码"}}
+  ]
+}

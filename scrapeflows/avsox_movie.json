@@ -1,0 +1,23 @@
+{
+  "type": "movie",
+  "site": "avsox",
+  "doh_enabled": false,
+  "lang": ["zh", "ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://www.avsox.net/cn/search/{title}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//*[@id='waterfall']/div/a/@href"]}}},
+    {"http": {"url": "https:{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//div[@class='container']/h3/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"number": ["xp_text", "//div[@class='col-md-3 info']/p/span[@style='color:#CC0000;']/text()"]}}},
+    {"transform": {"expression": "title = title.replace(number + ' ', '').strip() if number else title"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//div[@id='avatar-waterfall']/a/span/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//a[@class='bigImage']/@href"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//span[@class='genre']/a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//span[contains(text(),'发行时间:') or contains(text(),'發行日期:')]/../text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"runtime": ["xp_text", "//span[contains(text(),'长度:') or contains(text(),'長度:')]/../text()"]}}},
+    {"transform": {"expression": "runtime = re.findall(r'\\d+', runtime)[0] if runtime else ''"}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//p/a[contains(@href,'/studio/')]/text()"]}}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "runtime": "{runtime}", "studio": "{studio}", "publisher": "{studio}", "thumb": "{cover_url}", "mosaic": "无码"}}
+  ]
+}

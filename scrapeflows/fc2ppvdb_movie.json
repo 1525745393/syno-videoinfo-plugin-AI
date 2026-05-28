@@ -1,0 +1,20 @@
+{
+  "type": "movie",
+  "site": "fc2ppvdb.com",
+  "doh_enabled": false,
+  "lang": ["ja", "zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://fc2ppvdb.com/articles/article-info?videoid={title.replace('-', '').upper().replace('FC2PPV', '').replace('FC2-PPV-', '').replace('FC2-', '').strip()}", "method": "GET", "headers": {"Accept": "application/json, text/javascript, */*; q=0.01", "X-Requested-With": "XMLHttpRequest"}, "result": "json_data", "as_json": true}},
+    {"collect": {"source": "json_data", "into": {"title": ["json_path", "$.article.title"], "cover_url": ["json_path", "$.article.image_url"], "release_date": ["json_path", "$.article.release_date"], "studio": ["json_path", "$.article.writer.name"]}}},
+    {"collect": {"source": "json_data", "into": {"censored": ["json_path", "$.article.censored"]}}},
+    {"transform": {"expression": "mosaic = '无码' if censored == '無' else ('有码' if censored == '有' else '')"}},
+    {"collect": {"source": "json_data", "into": {"duration": ["json_path", "$.article.duration"]}}},
+    {"transform": {"expression": "runtime = str(int(duration.split(':')[0]) * 60 + int(duration.split(':')[1])) if ':' in duration else ''"}},
+    {"collect": {"source": "json_data", "into": {"actresses": ["json_path", "$.article.actresses"]}}},
+    {"transform": {"expression": "actors = [a['name'] for a in actresses if a.get('name')] if actresses else []"}},
+    {"collect": {"source": "json_data", "into": {"tags": ["json_path", "$.article.tags"]}}},
+    {"transform": {"expression": "tag_list = [t['name'] for t in tags if t.get('name') and t['name'] != '無修正'] if tags else []"}},
+    {"retval": {"title": "{title}", "originaltitle": "{title}", "number": "FC2-{title.replace('-', '').upper().replace('FC2PPV', '').replace('FC2-PPV-', '').replace('FC2-', '').strip()}", "actors": "{actors}", "tags": "{tag_list}", "release": "{release_date}", "year": "{release_date[:4] if release_date else ''}", "runtime": "{runtime}", "studio": "{studio}", "publisher": "{studio}", "thumb": "{cover_url}", "poster": "{cover_url}", "series": "FC2系列", "mosaic": "{mosaic}"}}
+  ]
+}

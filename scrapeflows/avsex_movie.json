@@ -1,0 +1,23 @@
+{
+  "type": "movie",
+  "site": "avsex",
+  "doh_enabled": false,
+  "lang": ["zh", "ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://gg5.co/tw/search?query={title.lower()}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//ul[@class]/li/a/@href"]}}},
+    {"http": {"url": "{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//span[@class='truncate p-2 text-primary font-bold dark:text-primary-200']/text()"]}}},
+    {"transform": {"expression": "title = title.replace('[VIP会员点播] ', '').replace('[VIP會員點播] ', '').replace('[VIP] ', '').replace('★ (请到免费赠片区观赏)', '').replace('(破解版獨家中文)', '').strip()"}},
+    {"collect": {"source": "detail_content", "into": {"number": ["xp_text", "//h2[@class]//span[@class='truncate']/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//dd[@class='flex gap-2 flex-wrap']/a[contains(@href, 'actor')]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"outline": ["xp_text", "//h2[contains(text(), '劇情簡介')]/following-sibling::p"]}}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//dt[contains(text(), '製作商')]/following-sibling::dd"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//div/dt[contains(text(), '上架日')]/../dd/text()"]}}},
+    {"transform": {"expression": "release = release.replace('/', '-').strip() if release else ''"}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_attr", "//dt[contains(text(), '類別')]/following-sibling::dd/a/@title"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//div[@class='relative overflow-hidden rounded-md']/img/@src"]}}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "outline": "{outline}", "tags": ["split_csv", "{tag}"], "studio": "{studio}", "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}", "mosaic": "有码"}}
+  ]
+}

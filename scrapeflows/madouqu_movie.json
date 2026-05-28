@@ -1,0 +1,22 @@
+{
+  "type": "movie",
+  "site": "madouqu.com",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://madouqu.com/?s={title}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//div[@class='entry-media']/div/a/@href"]}}},
+    {"collect": {"source": "search_content", "into": {"cover_url": ["xp_attr", "//div[@class='entry-media']/div/a/img/@data-src"]}}},
+    {"http": {"url": "{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//div[@class='cao_entry_header']/header/h1/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//span[@class='meta-category']"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_attr", "//time[@datetime]/@datetime"]}}},
+    {"transform": {"expression": "year = release[:4] if release else ''"}},
+    {"transform": {"expression": "release = release[:10] if release else ''"}},
+    {"collect": {"source": "detail_content", "into": {"cover_url2": ["xp_attr", "//div[@class='entry-content u-text-format u-clearfix']/p/img/@src"]}}},
+    {"transform": {"expression": "cover = cover_url2 if cover_url2 else cover_url"}},
+    {"transform": {"expression": "cover = cover.replace('//', 'https://') if cover.startswith('//') else ('https://madouqu.com' + cover if cover.startswith('/') else cover)"}},
+    {"retval": {"title": "{title}", "originaltitle": "{title}", "number": "{title}", "actors": [], "studio": "{studio}", "publisher": "{studio}", "thumb": "{cover}", "release": "{release}", "year": "{year}", "mosaic": "国产", "external_id": "{detail_url}"}}
+  ]
+}

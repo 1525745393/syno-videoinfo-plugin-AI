@@ -1,0 +1,21 @@
+{
+  "type": "movie",
+  "site": "dl.getchu.com",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://dl.getchu.com/i/item{title.replace('DLID-', '').replace('ITEM', '').replace('GETCHU', '').strip()}", "method": "GET", "cookies": {"adult_check_flag": "1"}, "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_attr", "//meta[@property='og:title']/@content"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//meta[@property='og:image']/@content"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//td[contains(text(),'配信開始日')]/following-sibling::td/text()"]}}},
+    {"transform": {"expression": "release = release.replace('/', '-') if release else ''"}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//td[text()='サークル']/following-sibling::td"]}}},
+    {"collect": {"source": "detail_content", "into": {"director": ["xp_text", "//td[text()='作者']/following-sibling::td"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//td[text()='趣向']/following-sibling::td/a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"outline": ["xp_text", "//td[text()='作品内容']/following-sibling::td"]}}},
+    {"collect": {"source": "detail_content", "into": {"extrafanart": ["xp_attr", "//a[contains(@href,'/data/item_img/') and @class='highslide']/@href"]}}},
+    {"transform": {"expression": "extrafanart = ['https://dl.getchu.com' + img for img in extrafanart] if extrafanart else []"}},
+    {"retval": {"title": "{title}", "number": "DLID-{title.replace('DLID-', '').replace('ITEM', '').replace('GETCHU', '').strip()}", "outline": "{outline}", "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "directors": ["split_csv", "{director}"], "studio": "{studio}", "thumb": "{cover_url}", "poster": "{cover_url}", "extrafanart": "{extrafanart}", "mosaic": "同人"}}
+  ]
+}

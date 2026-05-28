@@ -1,0 +1,16 @@
+{
+  "type": "movie",
+  "site": "cableav.tv",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://cableav.tv/?s={title}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//h3[contains(@class,'title')]//a[@href and @title]/@href"]}}},
+    {"http": {"url": "{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//div[@class='entry-content ']/p/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//meta[@property='og:image']/@content"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//header//div[@class='categories-wrap']/a/text()"]}}},
+    {"retval": {"title": "{title}", "number": "{title}", "tags": ["split_csv", "{tag}"], "thumb": "{cover_url}", "mosaic": "国产", "external_id": "{detail_url}"}}
+  ]
+}

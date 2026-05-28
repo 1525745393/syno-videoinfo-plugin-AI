@@ -1,0 +1,21 @@
+{
+  "type": "movie",
+  "site": "hdouban",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://api.6dccbca.com/api/search?ty=movie&search={title}&page=1&pageSize=12", "method": "GET", "result": "search_json", "as_json": true}},
+    {"collect": {"source": "search_json", "into": {"movies": ["json_path", "$.data.list"]}}},
+    {"transform": {"expression": "movie = next((m for m in movies if m.get('number') and (title.upper().replace('-', '') in m['number'].upper().replace('-', '') or title in str(m.get('name', '')))), None) if movies else None"}},
+    {"transform": {"expression": "movie_id = movie['id'] if movie else ''"}},
+    {"http": {"url": "https://api.6dccbca.com/api/movie/detail", "method": "POST", "body": "{\"id\": \"{movie_id}\"}", "headers": {"Content-Type": "application/json"}, "result": "detail_json", "as_json": true}},
+    {"collect": {"source": "detail_json", "into": {"title": ["json_path", "$.data.name"], "number": ["json_path", "$.data.number"], "cover_url": ["json_path", "$.data.big_cove"], "release": ["json_path", "$.data.release_time"]}}},
+    {"transform": {"expression": "title = title.replace(number, '').strip() if title and number else title"}},
+    {"collect": {"source": "detail_json", "into": {"actors": ["json_path", "$.data.actors"]}}},
+    {"transform": {"expression": "actor_list = [a['name'] for a in actors if a.get('sex') == '♀'] if actors else []"}},
+    {"collect": {"source": "detail_json", "into": {"tags": ["json_path", "$.data.labels"]}}},
+    {"transform": {"expression": "tag_list = [t['name'] for t in tags if t.get('name')] if tags else []"}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": "{actor_list}", "tags": "{tag_list}", "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}", "poster": ["json_path", "$.data.small_cover"], "studio": ["json_path", "$.data.company[0].name"], "publisher": ["json_path", "$.data.company[0].name"], "series": ["json_path", "$.data.series[0].name"]}}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "type": "movie",
+  "site": "official",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://www.prestige-av.com/search/list?keyword={title.replace('-', '')}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//a[@class='img hover']/@href"]}}},
+    {"http": {"url": "https://www.prestige-av.com{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//h2[@class='p-workPage__title']/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//a[@class='c-tag c-main-bg-hover c-main-font c-main-bd' and contains(@href, '/actress/')]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//img[@class='swiper-lazy']/@data-src"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//div[contains(text(), '発売日')]/following-sibling::div/div/a/text()"]}}},
+    {"transform": {"expression": "release = release.replace('年', '-').replace('月', '-').replace('日', '') if release else ''"}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//div[contains(text(), 'ジャンル')]/following-sibling::div/div/a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//div[contains(text(), '製作商')]/following-sibling::div"]}}},
+    {"retval": {"title": "{title}", "number": "{title}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}", "studio": "{studio}", "publisher": "{studio}", "mosaic": "有码"}}
+  ]
+}

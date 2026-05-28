@@ -1,0 +1,10 @@
+{
+  "type": "movie",
+  "site": "guochan",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"retval": {"title": "{title}", "number": "{title}", "actors": [], "tags": [], "studio": "", "mosaic": "国产"}}
+  ]
+}

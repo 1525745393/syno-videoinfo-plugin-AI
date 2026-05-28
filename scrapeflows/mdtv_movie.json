@@ -1,0 +1,19 @@
+{
+  "type": "movie",
+  "site": "mdtv",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://www.mdpjzip.xyz/index.php/vodsearch/-------------.html", "method": "POST", "body": "{\"wd\": \"{title}\"}", "headers": {"Content-Type": "application/x-www-form-urlencoded"}, "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//h4[@class='post-title']/a/@href"]}}},
+    {"http": {"url": "https://www.mdpjzip.xyz{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_attr", "//div[@class='blog-single']/div/a/@title"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//div[@class='blog-single']/div/a/img/@src"]}}},
+    {"transform": {"expression": "cover_url = 'https://www.mdpjzip.xyz' + cover_url if cover_url and 'http' not in cover_url else cover_url"}},
+    {"collect": {"source": "detail_content", "into": {"series": ["xp_text", "(//div[@class='category'])[1]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "(//div[@class='category'])[2]/a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "(//div[@class='category'])[3]/a/text()"]}}},
+    {"retval": {"title": "{title}", "number": "{title}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "series": "{series}", "thumb": "{cover_url}", "mosaic": "国产", "external_id": "https://www.mdpjzip.xyz{detail_url}"}}
+  ]
+}

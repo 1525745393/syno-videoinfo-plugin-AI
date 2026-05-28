@@ -1,0 +1,23 @@
+{
+  "type": "movie",
+  "site": "lulubar.co",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://lulubar.co/video/bysearch?search={title}&page=1", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//a[@class='imgBoxW']/@href"]}}},
+    {"http": {"url": "https://lulubar.co{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//title/text()"]}}},
+    {"transform": {"expression": "parts = title.split('|') if '|' in title else ['', '']"}},
+    {"transform": {"expression": "number = parts[0].strip() if len(parts) > 0 else ''"}},
+    {"transform": {"expression": "title = parts[1].replace(number, '').strip() if len(parts) > 1 else ''"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//a[@title='女优']/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//a[@class='notVipAd imgBoxW position-relative d-block']/img/@src"]}}},
+    {"transform": {"expression": "cover_url = 'https://lulubar.co' + cover_url if cover_url and 'http' not in cover_url else cover_url"}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//div[@class='tag_box d-flex flex-wrap p-1 col-12 mb-1']/a[@class='tag' and contains(@href,'bytagdetail')]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_attr", "//a[contains(@title,'上架日')]/@title"]}}},
+    {"transform": {"expression": "release = release.replace('上架日', '').strip() if release else ''"}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}"}}
+  ]
+}

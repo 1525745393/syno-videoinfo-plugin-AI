@@ -1,0 +1,23 @@
+{
+  "type": "movie",
+  "site": "fc2club.top",
+  "doh_enabled": false,
+  "lang": ["ja", "zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://fc2club.top/html/FC2-{title.replace('-', '').upper()}.html", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//h3/text()"], "number": ["xp_text", "//h1/text()"]}}},
+    {"transform": {"expression": "title = title.replace('FC2-' + title.split('-')[-1].strip() + ' ', '') if 'FC2-' in title else title"}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//img[@class='responsive']/@src"], "studio": ["xp_text", "//strong[contains(text(), '卖家信息')]/../a/text()"]}}},
+    {"transform": {"expression": "cover_url = cover_url.replace('../uploadfile', 'https://fc2club.top/uploadfile') if cover_url else ''"}},
+    {"transform": {"expression": "studio = studio.strip().replace('本资源官网地址', '') if studio else ''"}},
+    {"collect": {"source": "detail_content", "into": {"score": ["xp_text", "//strong[contains(text(), '影片评分')]/../text()"]}}},
+    {"transform": {"expression": "score = re.findall(r'\\d+', score)[0] if score else ''"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//strong[contains(text(), '女优名字')]/../a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//strong[contains(text(), '影片标签')]/../a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"outline": ["xp_text", "//div[@class='col des']/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"mosaic_info": ["xp_text", "//h5/strong[contains(text(), '资源参数')]/../text()"]}}},
+    {"transform": {"expression": "mosaic = '无码' if '无码' in mosaic_info else '有码'"}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "outline": "{outline}", "studio": "{studio}", "score": "{score}", "thumb": "{cover_url}", "series": "FC2系列", "mosaic": "{mosaic}"}}
+  ]
+}

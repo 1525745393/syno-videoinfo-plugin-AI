@@ -1,0 +1,21 @@
+{
+  "type": "movie",
+  "site": "love6.tv",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://love6.tv/search/all/?search_text={title}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//div[@class='col-sm-2 search_item']/a/@href"]}}},
+    {"http": {"url": "https://love6.tv{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//title/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"number": ["xp_text", "//dt[contains(text(),'作品番号')]/following-sibling::dd/text()"]}}},
+    {"transform": {"expression": "title = title.replace(number, '').strip() if number else title"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//div[@class='video_description']/a[contains(@href, 'performer/')]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["regex", "background-image: url\\('([^']+)", "detail_content"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//div[@class='kv_tag']/a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//div[@class='video_description']/span[contains(text(), '發行時間')]/text()"]}}},
+    {"transform": {"expression": "release = release.replace('發行時間: ', '').strip() if release else ''"}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}"}}
+  ]
+}

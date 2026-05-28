@@ -1,0 +1,16 @@
+{
+  "type": "movie",
+  "site": "cnmdb.net",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://cnmdb.net/{title}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//ol[@class='breadcrumb']//text()"]}}},
+    {"transform": {"expression": "title = [t.strip() for t in title if t.strip()][-1] if title else ''"}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//div[@class='post-image-inner']/img/@src"]}}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//ol[@class='breadcrumb']//text()"]}}},
+    {"transform": {"expression": "studio = '麻豆' if '麻豆' in str(studio) else ([s.strip() for s in studio if s.strip()][-2] if len([s.strip() for s in studio if s.strip()])>1 else '')"}},
+    {"retval": {"title": "{title}", "number": "{title}", "studio": "{studio}", "publisher": "{studio}", "thumb": "{cover_url}", "mosaic": "国产", "external_id": "https://cnmdb.net/{title}"}}
+  ]
+}

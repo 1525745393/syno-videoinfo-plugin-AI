@@ -1,0 +1,15 @@
+{
+  "type": "movie",
+  "site": "hscangku",
+  "doh_enabled": false,
+  "lang": ["zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "http://hsck.net/vodsearch/-------------.html?wd={title}&submit=", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//a[@class='stui-vodlist__thumb lazyload']/@href"]}}},
+    {"http": {"url": "http://hsck.net{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//h3[@class='title']/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//a[@data-original]/@data-original"]}}},
+    {"retval": {"title": "{title}", "number": "{title}", "thumb": "{cover_url}", "mosaic": "国产", "external_id": "http://hsck.net{detail_url}"}}
+  ]
+}

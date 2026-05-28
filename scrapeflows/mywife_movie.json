@@ -1,0 +1,20 @@
+{
+  "type": "movie",
+  "site": "mywife.cc",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://mywife.cc/teigaku/model/no/{title.replace('NO.', '').replace('No.', '').replace('no.', '').strip()}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//head/title/text()"]}}},
+    {"transform": {"expression": "parts = title.split('|') if '|' in title else ['', '']"}},
+    {"transform": {"expression": "number = parts[0].strip() if len(parts) > 0 else ''"}},
+    {"transform": {"expression": "title = ''.join(parts[1:]).strip() if len(parts) > 1 else ''"}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//video[@id='video']/@poster"]}}},
+    {"transform": {"expression": "cover_url = 'https:' + cover_url if cover_url and cover_url.startswith('//') else cover_url"}},
+    {"collect": {"source": "detail_content", "into": {"trailer": ["xp_attr", "//video[@id='video']/@src"]}}},
+    {"collect": {"source": "detail_content", "into": {"outline": ["xp_text", "//div[@class='modelsamplephototop']//text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_attr", "//div[@class='modelwaku0']/img/@alt"]}}},
+    {"retval": {"title": "{title}", "number": "Mywife {number}", "actors": ["split_csv", "{actor}"], "outline": "{outline}", "thumb": "{cover_url}", "poster": "{cover_url}", "trailer": "{trailer}", "studio": "舞ワイフ", "publisher": "舞ワイフ", "mosaic": "有码"}}
+  ]
+}

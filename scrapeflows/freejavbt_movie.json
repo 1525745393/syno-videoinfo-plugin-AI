@@ -1,0 +1,20 @@
+{
+  "type": "movie",
+  "site": "freejavbt.com",
+  "doh_enabled": false,
+  "lang": ["ja", "zh"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://freejavbt.com/{title}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title_text": ["xp_text", "//title/text()"]}}},
+    {"transform": {"expression": "title_text = title_text.replace('| FREE JAV BT', '') if title_text else ''"}},
+    {"transform": {"expression": "parts = title_text.split('|') if '|' in title_text else title_text.split(' ') if ' ' in title_text else ['', '']"}},
+    {"transform": {"expression": "number = parts[0].strip() if len(parts) > 0 else ''"}},
+    {"transform": {"expression": "title = ' '.join(parts[1:]).replace(number, '').replace('中文字幕', '').replace('無碼', '').strip() if len(parts) > 1 else ''"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//a[contains(concat(' ', normalize-space(@class), ' '), ' actress ')]/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_url": ["xp_attr", "//meta[@property='og:image']/@content"]}}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_attr", "//a[contains(@href, '/genre/') or contains(@href, '/genres/') or contains(@href, '/tag/')]//text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//span[contains(text(), '日期') or contains(text(), '発売日')]/following-sibling::*//text()"]}}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}", "mosaic": "无码"}}
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "type": "movie",
+  "site": "theporndb.net",
+  "doh_enabled": false,
+  "lang": ["en"],
+  "config": {},
+  "steps": [
+    {"http": {"url": "https://api.theporndb.net/scenes?parse={title}&per_page=100", "method": "GET", "headers": {"Accept": "application/json"}, "result": "search_json", "as_json": true}},
+    {"collect": {"source": "search_json", "into": {"scenes": ["json_path", "$.data"]}}},
+    {"transform": {"expression": "scene = scenes[0] if scenes else None"}},
+    {"transform": {"expression": "slug = scene['slug'] if scene else ''"}},
+    {"http": {"url": "https://api.theporndb.net/scenes/{slug}", "method": "GET", "headers": {"Accept": "application/json"}, "result": "detail_json", "as_json": true}},
+    {"collect": {"source": "detail_json", "into": {"title": ["json_path", "$.data.title"], "cover_url": ["json_path", "$.data.background.large"], "release": ["json_path", "$.data.date"]}}},
+    {"collect": {"source": "detail_json", "into": {"actors": ["json_path", "$.data.performers"]}}},
+    {"transform": {"expression": "actor_list = [a['name'] for a in actors if a.get('name')] if actors else []"}},
+    {"collect": {"source": "detail_json", "into": {"tags": ["json_path", "$.data.tags"]}}},
+    {"transform": {"expression": "tag_list = [t['name'] for t in tags if t.get('name')] if tags else []"}},
+    {"collect": {"source": "detail_json", "into": {"studio": ["json_path", "$.data.site.name"]}}},
+    {"retval": {"title": "{title}", "number": "{title}", "actors": "{actor_list}", "tags": "{tag_list}", "release": "{release}", "year": "{release[:4] if release else ''}", "thumb": "{cover_url}", "studio": "{studio}", "publisher": "{studio}", "mosaic": "无码"}}
+  ]
+}
