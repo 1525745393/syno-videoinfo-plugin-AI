@@ -201,6 +201,8 @@ class PersistentStorage:
                 state.successful_requests += 1
                 state.total_duration += duration
                 state.total_quality += quality
+            else:
+                state.failed_requests += 1
 
             # Add to history
             record = HistoryRecord(

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>源管理系统 - Syno VideoInfo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+        
+        .header-nav {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .tabs {
+            background: white;
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+        }
+        
+        .tab-nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .tab-btn {
+            padding: 15px 25px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            padding: 25px;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .stat-card.info {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-unknown {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .sources-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .sources-table th,
+        .sources-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .sources-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .sources-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .alerts-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            padding: 12px;
+            border-left: 4px solid;
+            margin-bottom: 10px;
+            border-radius: 0 6px 6px 0;
+            background: #f8f9fa;
+        }
+        
+        .alert-warning {
+            border-left-color: #ffc107;
+        }
+        
+        .alert-error {
+            border-left-color: #dc3545;
+        }
+        
+        .alert-info {
+            border-left-color: #17a2b8;
+        }
+        
+        .history-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .search-box {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 源管理系统</h1>
+            <div class="header-nav">
+                <a href="/" class="btn btn-secondary">⚙️ 配置</a>
+                <button class="btn btn-success" onclick="saveData()">💾 保存</button>
+                <button class="btn btn-primary" onclick="refreshData()">🔄 刷新</button>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="showTab('dashboard')">📊 仪表板</button>
+                <button class="tab-btn" onclick="showTab('sources')">📚 源管理</button>
+                <button class="tab-btn" onclick="showTab('alerts')">⚠️ 告警</button>
+                <button class="tab-btn" onclick="showTab('history')">📜 历史</button>
+            </div>
+            
+            <div class="tab-content">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-pane active">
+                    <div id="dashboard-content">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            加载中...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sources Tab -->
+                <div id="sources" class="tab-pane">
+                    <input type="text" class="search-box" placeholder="搜索源..." id="searchInput" oninput="filterSources()">
+                    <div id="sources-content">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            加载中...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alerts Tab -->
+                <div id="alerts" class="tab-pane">
+                    <div id="alerts-content">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            加载中...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- History Tab -->
+                <div id="history" class="tab-pane">
+                    <div id="history-content">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            加载中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allSources = [];
+        let allAlerts = [];
+        let allHistory = [];
+        
+        async function refreshData() {
+            try {
+                // Load health data
+                const healthResponse = await fetch('/api/health');
+                const healthData = await healthResponse.json();
+                
+                // Load history
+                const historyResponse = await fetch('/api/history');
+                const historyData = await historyResponse.json();
+                
+                renderDashboard(healthData);
+                renderSources(healthData);
+                renderAlerts(healthData);
+                renderHistory(historyData);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        
+        function showTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function renderDashboard(data) {
+            const content = document.getElementById('dashboard-content');
+            
+            const healthy = data.health?.healthy?.length || 0;
+            const warning = data.health?.warning?.length || 0;
+            const error = data.health?.error?.length || 0;
+            const unknown = data.health?.unknown?.length || 0;
+            const total = data.health?.total_sources || healthy + warning + error + unknown;
+            
+            content.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <div class="stat-value">${total}</div>
+                        <div class="stat-label">总源数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${healthy}</div>
+                        <div class="stat-label">健康</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-value">${warning}</div>
+                        <div class="stat-label">警告</div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-value">${error}</div>
+                        <div class="stat-label">错误</div>
+                    </div>
+                </div>
+                
+                <div style="background: white; border-radius: 10px; padding: 20px;">
+                    <h3 style="margin-bottom: 20px; color: #333;">源状态分布</h3>
+                    <p style="color: #6c757d; font-size: 14px;">
+                        健康源: ${healthy} | 警告源: ${warning} | 错误源: ${error} | 未知: ${unknown}
+                    </p>
+                </div>
+            `;
+        }
+        
+        function renderSources(data) {
+            allSources = data.health?.persistent_states || [];
+            const content = document.getElementById('sources-content');
+            
+            const healthySources = data.health?.healthy || [];
+            const warningSources = data.health?.warning || [];
+            const errorSources = data.health?.error || [];
+            const unknownSources = data.health?.unknown || [];
+            
+            let tableHTML = `
+                <table class="sources-table">
+                    <thead>
+                        <tr>
+                            <th>源名称</th>
+                            <th>状态</th>
+                            <th>成功率</th>
+                            <th>平均响应</th>
+                            <th>总请求</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sources-table-body">
+            `;
+            
+            const allSourceNames = [
+                ...healthySources,
+                ...warningSources,
+                ...errorSources,
+                ...unknownSources
+            ];
+            
+            if (allSourceNames.length === 0) {
+                tableHTML += `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #6c757d;">
+                            暂无数据，请先运行一些刮削任务
+                        </td>
+                    </tr>
+                `;
+            } else {
+                allSourceNames.forEach(source => {
+                    let status = 'unknown';
+                    let statusClass = 'status-unknown';
+                    
+                    if (healthySources.includes(source)) {
+                        status = '健康';
+                        statusClass = 'status-healthy';
+                    } else if (warningSources.includes(source)) {
+                        status = '警告';
+                        statusClass = 'status-warning';
+                    } else if (errorSources.includes(source)) {
+                        status = '错误';
+                        statusClass = 'status-error';
+                    }
+                    
+                    tableHTML += `
+                        <tr class="source-row" data-source="${source}">
+                            <td><strong>${source}</strong></td>
+                            <td><span class="status-badge ${statusClass}">${status}</span></td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-success" onclick="enableSource('${source}')">启用</button>
+                                    <button class="btn btn-warning" onclick="disableSource('${source}')">禁用</button>
+                                    <button class="btn btn-danger" onclick="resetSource('${source}')">重置</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            content.innerHTML = tableHTML;
+        }
+        
+        function renderAlerts(data) {
+            allAlerts = data.health?.alerts || [];
+            const content = document.getElementById('alerts-content');
+            
+            if (allAlerts.length === 0) {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #28a745;">
+                        ✅ 暂无告警，一切正常！
+                    </div>
+                `;
+                return;
+            }
+            
+            let alertsHTML = '<div class="alerts-list">';
+            allAlerts.slice(-20).reverse().forEach(alert => {
+                const alertClass = alert.level === 'error' ? 'alert-error' : 
+                                 alert.level === 'warning' ? 'alert-warning' : 'alert-info';
+                
+                alertsHTML += `
+                    <div class="alert-item ${alertClass}">
+                        <strong>${alert.source}</strong>
+                        <span style="color: #6c757d; margin-left: 10px;">${alert.message}</span>
+                    </div>
+                `;
+            });
+            alertsHTML += '</div>';
+            
+            content.innerHTML = alertsHTML;
+        }
+        
+        function renderHistory(data) {
+            allHistory = data.history || [];
+            const content = document.getElementById('history-content');
+            
+            if (allHistory.length === 0) {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #6c757d;">
+                        暂无历史记录
+                    </div>
+                `;
+                return;
+            }
+            
+            let historyHTML = '<div class="history-list">';
+            allHistory.slice(-50).reverse().forEach(record => {
+                const statusIcon = record.success ? '✅' : '❌';
+                const date = new Date(record.timestamp * 1000).toLocaleString();
+                
+                historyHTML += `
+                    <div class="history-item">
+                        <div>
+                            <span style="font-size: 18px;">${statusIcon}</span>
+                            <strong style="margin-left: 8px;">${record.source}</strong>
+                            ${record.title ? `- ${record.title}` : ''}
+                        </div>
+                        <div style="color: #6c757d; font-size: 12px;">
+                            ${date} | ${record.duration.toFixed(2)}s
+                        </div>
+                    </div>
+                `;
+            });
+            historyHTML += '</div>';
+            
+            content.innerHTML = historyHTML;
+        }
+        
+        function filterSources() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('.source-row');
+            
+            rows.forEach(row => {
+                const sourceName = row.getAttribute('data-source').toLowerCase();
+                if (sourceName.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        async function saveData() {
+            try {
+                await fetch('/api/save', { method: 'POST' });
+                alert('数据保存成功！');
+            } catch (error) {
+                alert('保存失败: ' + error);
+            }
+        }
+        
+        async function enableSource(source) {
+            try {
+                await fetch('/api/enable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source })
+                });
+                refreshData();
+            } catch (error) {
+                alert('操作失败: ' + error);
+            }
+        }
+        
+        async function disableSource(source) {
+            try {
+                await fetch('/api/disable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source })
+                });
+                refreshData();
+            } catch (error) {
+                alert('操作失败: ' + error);
+            }
+        }
+        
+        async function resetSource(source) {
+            if (confirm('确定要重置源数据吗？')) {
+                try {
+                    await fetch('/api/reset', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ source })
+                    });
+                    refreshData();
+                } catch (error) {
+                    alert('操作失败: ' + error);
+                }
+            }
+        }
+        
+        // Initial load
+        refreshData();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(refreshData, 30000);
+    </script>
+</body>
+</html>
