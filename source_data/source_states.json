@@ -1,0 +1,72 @@
+{
+  "example_source_1": {
+    "source": "example_source_1",
+    "total_requests": 2,
+    "successful_requests": 2,
+    "failed_requests": 0,
+    "total_duration": 0.0,
+    "total_quality": 0.0,
+    "last_request": 1780008600.2914386,
+    "first_request": 1780008600.2911875,
+    "enabled": true,
+    "priority": 50,
+    "category": "unknown",
+    "tags": []
+  },
+  "example_source_2": {
+    "source": "example_source_2",
+    "total_requests": 1,
+    "successful_requests": 0,
+    "failed_requests": 0,
+    "total_duration": 0,
+    "total_quality": 0,
+    "last_request": 1780008600.2916903,
+    "first_request": 1780008600.2916903,
+    "enabled": true,
+    "priority": 50,
+    "category": "unknown",
+    "tags": []
+  },
+  "javbus_movie": {
+    "source": "javbus_movie",
+    "total_requests": 2,
+    "successful_requests": 2,
+    "failed_requests": 0,
+    "total_duration": 2.4,
+    "total_quality": 10500.0,
+    "last_request": 1780008648.184698,
+    "first_request": 1780008648.184698,
+    "enabled": true,
+    "priority": 50,
+    "category": "unknown",
+    "tags": []
+  },
+  "javdb_movie": {
+    "source": "javdb_movie",
+    "total_requests": 2,
+    "successful_requests": 2,
+    "failed_requests": 0,
+    "total_duration": 1.6,
+    "total_quality": 8500.0,
+    "last_request": 1780008648.1851716,
+    "first_request": 1780008648.1851716,
+    "enabled": true,
+    "priority": 50,
+    "category": "unknown",
+    "tags": []
+  },
+  "test_source": {
+    "source": "test_source",
+    "total_requests": 2,
+    "successful_requests": 0,
+    "failed_requests": 1,
+    "total_duration": 0,
+    "total_quality": 0,
+    "last_request": 1780008648.1856446,
+    "first_request": 1780008648.1856446,
+    "enabled": true,
+    "priority": 50,
+    "category": "unknown",
+    "tags": []
+  }
+}

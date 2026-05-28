@@ -1,0 +1,83 @@
+[
+  {
+    "source": "example_source_1",
+    "timestamp": 1780008600.2911875,
+    "success": true,
+    "duration": 1.2,
+    "quality": 85.0,
+    "number": "EX-001",
+    "title": "Example Video 1"
+  },
+  {
+    "source": "example_source_1",
+    "timestamp": 1780008600.2914386,
+    "success": true,
+    "duration": 0.9,
+    "quality": 92.0,
+    "number": "EX-002",
+    "title": "Example Video 2"
+  },
+  {
+    "source": "example_source_2",
+    "timestamp": 1780008600.2916903,
+    "success": false,
+    "duration": 3.5,
+    "quality": 0.0,
+    "number": "EX-003",
+    "title": "Example Video 3"
+  },
+  {
+    "source": "javbus_movie",
+    "timestamp": 1780008648.184698,
+    "success": true,
+    "duration": 1.2,
+    "quality": 5250.0,
+    "number": "JAV-123",
+    "title": "Test Video"
+  },
+  {
+    "source": "javdb_movie",
+    "timestamp": 1780008648.1851716,
+    "success": true,
+    "duration": 0.8,
+    "quality": 4250.0,
+    "number": "JAV-123",
+    "title": "Test Video"
+  },
+  {
+    "source": "test_source",
+    "timestamp": 1780008648.1856446,
+    "success": false,
+    "duration": 5.0,
+    "quality": 0.0,
+    "number": "",
+    "title": ""
+  },
+  {
+    "source": "javbus_movie",
+    "timestamp": 1780008708.1872737,
+    "success": true,
+    "duration": 1.2,
+    "quality": 5250.0,
+    "number": "JAV-123",
+    "title": "Test Video"
+  },
+  {
+    "source": "javdb_movie",
+    "timestamp": 1780008708.187777,
+    "success": true,
+    "duration": 0.8,
+    "quality": 4250.0,
+    "number": "JAV-123",
+    "title": "Test Video"
+  },
+  {
+    "source": "test_source",
+    "timestamp": 1780008708.1883454,
+    "success": false,
+    "duration": 5.0,
+    "quality": 0.0,
+    "number": "",
+    "title": ""
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "version": "1.0",
+  "auto_save": true,
+  "auto_save_interval": 300,
+  "history_retention_days": 30
+}
