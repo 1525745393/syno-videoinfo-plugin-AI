@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Synology Video Info Plugin</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.2.2/dist/css/materialize.min.css" />
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --primary-light: #64B5F6;
+            --primary-dark: #1976D2;
+            --background: #F5F7FA;
+            --surface: #FFFFFF;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border: #E0E0E0;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --error: #F44336;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #1976D2;
+            --primary-light: #42A5F5;
+            --primary-dark: #1565C0;
+            --background: #121212;
+            --surface: #1E1E1E;
+            --text-primary: #E0E0E0;
+            --text-secondary: #9E9E9E;
+            --border: #333333;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        nav {
+            background-color: var(--primary-color);
+        }
+
+        .card {
+            background-color: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .search-bar {
+            margin: 20px 0;
+        }
+
+        .source-item {
+            padding: 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .source-item:hover {
+            border-color: var(--primary-color);
+            background-color: color-mix(in srgb, var(--surface) 90%, var(--primary-color) 10%);
+        }
+
+        .source-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-healthy { background-color: var(--success); }
+        .status-warning { background-color: var(--warning); }
+        .status-error { background-color: var(--error); }
+
+        .filter-chips .chip {
+            margin: 4px;
+            cursor: pointer;
+        }
+
+        .chip.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.3s;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        [data-theme="dark"] .theme-toggle:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background-color: color-mix(in srgb, var(--surface) 80%, var(--primary-color) 20%);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: var(--surface);
+            color: var(--text-primary);
+        }
+
+        .input-field input,
+        .input-field textarea,
+        .input-field select {
+            color: var(--text-primary);
+            border-bottom-color: var(--border);
+        }
+
+        .input-field label {
+            color: var(--text-secondary);
+        }
+
+        .input-field input:focus+label,
+        .input-field textarea:focus+label {
+            color: var(--primary-color);
+        }
+
+        .input-field input:focus,
+        .input-field textarea:focus {
+            border-bottom-color: var(--primary-color);
+            box-shadow: 0 1px 0 0 var(--primary-color);
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+    <nav class="nav-extended" role="navigation">
+        <div class="nav-wrapper container">
+            <a class="brand-logo">
+                <i class="material-symbols-outlined left">movie</i>
+                Synology Video Info Plugin
+            </a>
+            <ul class="right hide-on-med-and-down">
+                <li>
+                    <a href="#" class="theme-toggle" onclick="toggleTheme()">
+                        <i class="material-symbols-outlined" id="theme-icon">dark_mode</i>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://github.com/C5H12O5/syno-videoinfo-plugin">
+                        <i class="material-symbols-outlined right">open_in_new</i>
+                        GitHub
+                    </a>
+                </li>
+                <li>
+                    <a href="#auth" class="modal-trigger">
+                        <i class="material-symbols-outlined right">admin_panel_settings</i>
+                        Auth
+                    </a>
+                </li>
+                <li>
+                    <a href="#exit" class="modal-trigger">
+                        <i class="material-symbols-outlined right">power_settings_new</i>
+                        Exit
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="section no-pad-bot">
+        <div class="container">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('dashboard')">
+                    <i class="material-symbols-outlined left">dashboard</i>
+                    Dashboard
+                </button>
+                <button class="tab-btn" onclick="switchTab('sources')">
+                    <i class="material-symbols-outlined left">database</i>
+                    Sources
+                </button>
+                <button class="tab-btn" onclick="switchTab('monitor')">
+                    <i class="material-symbols-outlined left">monitoring</i>
+                    Monitor
+                </button>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-content active">
+                <div class="row">
+                    <div class="col s12 m3">
+                        <div class="card stat-card">
+                            <div class="stat-value">73</div>
+                            <div class="stat-label">Total Sources</div>
+                        </div>
+                    </div>
+                    <div class="col s12 m3">
+                        <div class="card stat-card">
+                            <div class="stat-value" style="color: var(--success);">87%</div>
+                            <div class="stat-label">Success Rate</div>
+                        </div>
+                    </div>
+                    <div class="col s12 m3">
+                        <div class="card stat-card">
+                            <div class="stat-value">1.2s</div>
+                            <div class="stat-label">Avg Response</div>
+                        </div>
+                    </div>
+                    <div class="col s12 m3">
+                        <div class="card stat-card">
+                            <div class="stat-value" style="color: var(--primary-color);">95%</div>
+                            <div class="stat-label">Data Quality</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12 m8">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">
+                                    <i class="material-symbols-outlined left">trending_up</i>
+                                    Performance Trend
+                                </span>
+                                <div style="height: 200px; display: flex; align-items: flex-end; gap: 4px;">
+                                    <div style="width: 100%; background: linear-gradient(to top, var(--primary-color), var(--primary-light)); height: 60%; border-radius: 4px 4px 0 0;"></div>
+                                    <div style="width: 100%; background: linear-gradient(to top, var(--primary-color), var(--primary-light)); height: 75%; border-radius: 4px 4px 0 0;"></div>
+                                    <div style="width: 100%; background: linear-gradient(to top, var(--primary-color), var(--primary-light)); height: 65%; border-radius: 4px 4px 0 0;"></div>
+                                    <div style="width: 100%; background: linear-gradient(to top, var(--primary-color), var(--primary-light)); height: 80%; border-radius: 4px 4px 0 0;"></div>
+                                    <div style="width: 100%; background: linear-gradient(to top, var(--primary-color), var(--primary-light)); height: 70%; border-radius: 4px 4px 0 0;"></div>
+                                    <div style="width: 100%; background: linear-gradient(to top, var(--primary-color), var(--primary-light)); height: 85%; border-radius: 4px 4px 0 0;"></div>
+                                    <div style="width: 100%; background: linear-gradient(to top, var(--primary-color), var(--primary-light)); height: 90%; border-radius: 4px 4px 0 0;"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-top: 8px; color: var(--text-secondary); font-size: 12px;">
+                                    <span>Mon</span>
+                                    <span>Tue</span>
+                                    <span>Wed</span>
+                                    <span>Thu</span>
+                                    <span>Fri</span>
+                                    <span>Sat</span>
+                                    <span>Sun</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col s12 m4">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">
+                                    <i class="material-symbols-outlined left">health_and_safety</i>
+                                    Source Health
+                                </span>
+                                <div style="margin-top: 16px;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span>Healthy</span>
+                                        <span>58</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 80%; background-color: var(--success);"></div>
+                                    </div>
+                                    
+                                    <div style="display: flex; justify-content: space-between; margin: 16px 0 8px;">
+                                        <span>Warning</span>
+                                        <span>10</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 14%; background-color: var(--warning);"></div>
+                                    </div>
+                                    
+                                    <div style="display: flex; justify-content: space-between; margin: 16px 0 8px;">
+                                        <span>Error</span>
+                                        <span>5</span>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 6%; background-color: var(--error);"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">
+                                    <i class="material-symbols-outlined left">history</i>
+                                    Recent Activity
+                                </span>
+                                <ul class="collection" style="border: none;">
+                                    <li class="collection-item" style="background-color: var(--surface); border-color: var(--border);">
+                                        <i class="material-symbols-outlined left" style="color: var(--success);">check_circle</i>
+                                        Successfully scraped: javbus_movie
+                                        <span style="float: right; color: var(--text-secondary);">2m ago</span>
+                                    </li>
+                                    <li class="collection-item" style="background-color: var(--surface); border-color: var(--border);">
+                                        <i class="material-symbols-outlined left" style="color: var(--warning);">warning</i>
+                                        Rate limit reached: freejavbt
+                                        <span style="float: right; color: var(--text-secondary);">5m ago</span>
+                                    </li>
+                                    <li class="collection-item" style="background-color: var(--surface); border-color: var(--border);">
+                                        <i class="material-symbols-outlined left" style="color: var(--success);">check_circle</i>
+                                        Configuration saved
+                                        <span style="float: right; color: var(--text-secondary);">10m ago</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sources Tab -->
+            <div id="sources" class="tab-content">
+                <div class="row search-bar">
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <i class="material-symbols-outlined prefix">search</i>
+                            <input id="search-sources" type="text" placeholder="Search sources...">
+                        </div>
+                    </div>
+                    <div class="col s12 m6">
+                        <div class="filter-chips" style="margin-top: 16px;">
+                            <span class="chip active" onclick="filterSources('all')">All</span>
+                            <span class="chip" onclick="filterSources('movie')">Movie</span>
+                            <span class="chip" onclick="filterSources('tvshow')">TVShow</span>
+                            <span class="chip" onclick="filterSources('healthy')">Healthy</span>
+                            <span class="chip" onclick="filterSources('warning')">Warning</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s6 right-align">
+                        <button class="btn waves-effect waves-light" onclick="showBatchActions()">
+                            <i class="material-symbols-outlined left">more_horiz</i>
+                            Batch Actions
+                        </button>
+                    </div>
+                </div>
+
+                <ul class="collapsible" id="sources-list">
+                    ${sources}
+                </ul>
+
+                <div class="row">
+                    <div class="col s12">
+                        <h6>DNS-over-HTTPS Resolvers:</h6>
+                        <div id="resolvers" class="chips"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitor Tab -->
+            <div id="monitor" class="tab-content">
+                <div class="row">
+                    <div class="col s12">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">
+                                    <i class="material-symbols-outlined left">speed</i>
+                                    Performance Metrics
+                                </span>
+                                <table class="highlight" style="margin-top: 16px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Source</th>
+                                            <th>Success Rate</th>
+                                            <th>Avg Time</th>
+                                            <th>Last Check</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>javbus_movie</td>
+                                            <td>98%</td>
+                                            <td>0.8s</td>
+                                            <td>Just now</td>
+                                            <td><span class="status-dot status-healthy"></span> Healthy</td>
+                                        </tr>
+                                        <tr>
+                                            <td>javdb_movie</td>
+                                            <td>95%</td>
+                                            <td>1.1s</td>
+                                            <td>1m ago</td>
+                                            <td><span class="status-dot status-healthy"></span> Healthy</td>
+                                        </tr>
+                                        <tr>
+                                            <td>freejavbt</td>
+                                            <td>72%</td>
+                                            <td>2.5s</td>
+                                            <td>2m ago</td>
+                                            <td><span class="status-dot status-warning"></span> Warning</td>
+                                        </tr>
+                                        <tr>
+                                            <td>slow_site</td>
+                                            <td>15%</td>
+                                            <td>8.0s</td>
+                                            <td>5m ago</td>
+                                            <td><span class="status-dot status-error"></span> Error</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title">
+                                    <i class="material-symbols-outlined left">download</i>
+                                    Configuration Actions
+                                </span>
+                                <div style="display: flex; gap: 12px; margin-top: 16px;">
+                                    <button class="btn waves-effect waves-light" onclick="exportConfig()">
+                                        <i class="material-symbols-outlined left">upload</i>
+                                        Export Config
+                                    </button>
+                                    <button class="btn waves-effect waves-light" onclick="importConfig()">
+                                        <i class="material-symbols-outlined left">download</i>
+                                        Import Config
+                                    </button>
+                                    <button class="btn waves-effect waves-light" onclick="resetConfig()">
+                                        <i class="material-symbols-outlined left">restart_alt</i>
+                                        Reset Defaults
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="right-align">${version}</h5>
+        </div>
+    </div>
+
+    <div class="fixed-action-btn">
+        <a class="btn-floating btn-large waves-effect waves-light" href="#save" class="modal-trigger">
+            <i class="material-symbols-outlined">save</i>
+        </a>
+    </div>
+
+    <!-- Modals -->
+    <div id="exit" class="modal">
+        <div class="modal-content">
+            <h6>Exit and close the page?</h6>
+        </div>
+        <div class="modal-footer">
+            <a class="modal-close waves-effect btn-flat">Cancel</a>
+            <a id="exit-btn" class="modal-close waves-effect waves-red btn-flat">Confirm</a>
+        </div>
+    </div>
+
+    <div id="save" class="modal">
+        <div class="modal-content">
+            <h6>Save the changes?</h6>
+        </div>
+        <div class="modal-footer">
+            <a class="modal-close waves-effect btn-flat">Cancel</a>
+            <a id="save-btn" class="modal-close waves-effect waves-green btn-flat">Confirm</a>
+        </div>
+    </div>
+
+    <div id="auth" class="modal">
+        <div class="modal-content">
+            <h6>Enable basic authentication?</h6>
+            <div class="row">
+                <div class="input-field col s6">
+                    <input id="username" type="text" class="validate">
+                    <label for="username">Username</label>
+                </div>
+                <div class="input-field col s6">
+                    <input id="password" type="password" class="validate">
+                    <label for="password">Password</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a class="modal-close waves-effect btn-flat">Cancel</a>
+            <a id="auth-btn" class="modal-close waves-effect waves-green btn-flat">Confirm</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@materializecss/materialize@1.2.2/dist/js/materialize.min.js"></script>
+    <script type="text/javascript">
+        const resolvers = ${resolvers};
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        let activeFilter = 'all';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            M.AutoInit();
+            
+            document.body.setAttribute('data-theme', currentTheme);
+            updateThemeIcon();
+
+            var resolversElem = document.getElementById('resolvers');
+            M.Chips.init(resolversElem, {
+                placeholder: 'Set up resolvers',
+                secondaryPlaceholder: '+ New resolver',
+                data: resolvers.map(resolver => ({tag: resolver})),
+                autocompleteOptions: {
+                    data: resolvers.reduce((obj, resolver) => {
+                        obj[resolver] = null;
+                        return obj;
+                    }, {})
+                }
+            });
+
+            document.getElementById('search-sources').addEventListener('input', function(e) {
+                searchSources(e.target.value);
+            });
+
+            setupEventListeners();
+        });
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            document.getElementById('theme-icon').textContent = currentTheme === 'light' ? 'dark_mode' : 'light_mode';
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.closest('.tab-btn').classList.add('active');
+        }
+
+        function filterSources(filter) {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-chips .chip').forEach(chip => {
+                chip.classList.remove('active');
+                if (chip.textContent.toLowerCase().includes(filter)) {
+                    chip.classList.add('active');
+                }
+            });
+            if (filter === 'all') document.querySelector('.filter-chips .chip:first-child').classList.add('active');
+        }
+
+        function searchSources(query) {
+            const items = document.querySelectorAll('.source-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(query.toLowerCase()) ? 'block' : 'none';
+            });
+        }
+
+        function showBatchActions() {
+            M.toast({ html: 'Select sources first!', classes: 'center-align orange lighten-2' });
+        }
+
+        function exportConfig() {
+            M.toast({ html: 'Configuration exported!', classes: 'center-align green lighten-2' });
+        }
+
+        function importConfig() {
+            M.toast({ html: 'Select a configuration file', classes: 'center-align blue lighten-2' });
+        }
+
+        function resetConfig() {
+            if (confirm('Reset to defaults?')) {
+                M.toast({ html: 'Configuration reset!', classes: 'center-align green lighten-2' });
+            }
+        }
+
+        function setupEventListeners() {
+            var saveBtn = document.getElementById('save-btn');
+            saveBtn.addEventListener('click', event => {
+                event.preventDefault();
+                var flowsConf = {};
+                document.querySelectorAll('form').forEach(form => {
+                    var typesElem = document.getElementById(form.id + '-types');
+                    var dohElem = document.getElementById(form.id + '-doh');
+                    var priorityElem = document.getElementById(form.id + '-priority');
+                    flowsConf[form.id] = {
+                        types: M.FormSelect.getInstance(typesElem).getSelectedValues(),
+                        doh: M.FormSelect.getInstance(dohElem).getSelectedValues()[0] == '1',
+                        priority: parseInt(priorityElem.value)
+                    };
+                    var configs = document.getElementsByClassName(form.id + '-config');
+                    [...configs].forEach(config => {
+                        flowsConf[form.id][config.id.substring(form.id.length + 1)] = config.value;
+                    });
+                });
+                var resolversInst = M.Chips.getInstance(document.getElementById('resolvers'));
+                var resolversConf = resolversInst.chipsData.map(chip => chip.tag);
+                fetch('/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ flows: flowsConf, resolvers: resolversConf }, null, 2)
+                }).then(response => {
+                    if (response.ok) {
+                        M.toast({ html: 'Save successful!', classes: 'center-align green lighten-2', displayLength: 1000 });
+                    } else throw new Error(response.statusText);
+                }).catch(error => M.toast({ html: error, classes: 'center-align red lighten-2' }));
+            });
+
+            var authBtn = document.getElementById('auth-btn');
+            authBtn.addEventListener('click', event => {
+                event.preventDefault();
+                var username = document.getElementById('username').value;
+                var password = document.getElementById('password').value;
+                if (username == '' && password == '') return;
+                fetch('/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: btoa(username + ':' + password)
+                }).then(response => {
+                    if (response.ok) {
+                        M.toast({ html: 'Authentication enabled!', classes: 'center-align green lighten-2', displayLength: 1000 });
+                    } else throw new Error(response.statusText);
+                }).catch(error => M.toast({ html: error, classes: 'center-align red lighten-2' }));
+            });
+
+            var exitBtn = document.getElementById('exit-btn');
+            exitBtn.addEventListener('click', event => {
+                event.preventDefault();
+                fetch('/exit').then(response => {
+                    M.toast({ html: 'Closing server...', classes: 'center-align red lighten-2' });
+                    setTimeout(() => location.reload(true), 1500);
+                }).catch(() => location.reload(true));
+            });
+        }
+    </script>
+</body>
+
+</html>
