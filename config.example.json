@@ -1,0 +1,120 @@
+{
+  "_comment": "Syno VideoInfo 插件配置示例文件，复制为 config.json 后修改",
+
+  "scraper": {
+    "timeout": 30,
+    "max_retries": 3,
+    "retry_delay": 1.0,
+    "max_concurrent": 5,
+    "doh_enabled": false,
+
+    "default_language": "chs",
+    "scrape_timeout": 60,
+    "max_results": 5,
+
+    "cache_enabled": true,
+    "cache_ttl": 3600,
+    "cache_dir": ".cache",
+
+    "log_level": "INFO",
+    "log_file": "scraper.log",
+
+    "min_success_rate": 0.5,
+    "min_completeness": 0.6,
+
+    "source_priorities": {
+      "javdb_movie": 100,
+      "javbus_movie": 90,
+      "dmm_movie": 80,
+      "missav_movie": 70,
+      "theporndb_movie": 60
+    },
+
+    "disabled_sources": []
+  },
+
+  "logging": {
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+      "default": {
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+      },
+      "detailed": {
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s"
+      },
+      "simple": {
+        "format": "%(levelname)s: %(message)s"
+      }
+    },
+    "handlers": {
+      "console": {
+        "class": "logging.StreamHandler",
+        "formatter": "default",
+        "level": "INFO"
+      },
+      "file": {
+        "class": "logging.FileHandler",
+        "formatter": "detailed",
+        "level": "DEBUG",
+        "filename": "scraper.log",
+        "encoding": "utf-8"
+      }
+    },
+    "root": {
+      "level": "INFO",
+      "handlers": ["console", "file"]
+    },
+    "loggers": {
+      "scraper": {
+        "level": "DEBUG",
+        "handlers": ["console", "file"],
+        "propagate": false
+      }
+    }
+  },
+
+  "quality": {
+    "field_weights": {
+      "title": 20,
+      "number": 15,
+      "actors": 15,
+      "studio": 10,
+      "release": 10,
+      "runtime": 5,
+      "tags": 5,
+      "outline": 5
+    },
+    "min_quality_score": 60.0,
+    "required_fields": ["title", "number"],
+    "important_fields": ["actors", "studio", "release"]
+  },
+
+  "ranking": {
+    "success_weight": 0.4,
+    "speed_weight": 0.2,
+    "quality_weight": 0.3,
+    "stability_weight": 0.1,
+    "time_window_hours": 24
+  },
+
+  "performance": {
+    "enable_async": true,
+    "enable_connection_pool": true,
+    "pool_maxsize": 20,
+    "pool_maxconnect": 100,
+    "request_timeout": 30,
+    "retry_on_connection_error": true,
+    "backoff_factor": 0.5,
+    "backoff_max": 10.0
+  },
+
+  "advanced": {
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "custom_headers": {},
+    "proxy": null,
+    "verify_ssl": true,
+    "enable_cache": true,
+    "cache_max_size": 1000
+  }
+}

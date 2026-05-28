@@ -50,9 +50,19 @@ setup(
         "configserver"
     ],
     package_data={
-        "": ["run.sh", "resolvers.conf", "INFO"],
+        "": ["run.sh", "resolvers.conf", "INFO", "config.example.json", ".env.example"],
         "scrapeflows": ["*.json"],
         "configserver": ["templates/*.html"],
     },
     python_requires=">=3.6",
+    extras_require={
+        "dev": [
+            "pytest>=6.0",
+            "black",
+            "flake8",
+        ],
+        "yaml": [
+            "PyYAML>=5.0"
+        ],
+    },
 )

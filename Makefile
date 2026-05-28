@@ -1,24 +1,45 @@
 # Makefile for Syno VideoInfo Plugin
-
-.PHONY: help test validate package clean test-unit test-integration check-health
+.PHONY: help test validate package clean test-unit test-integration check-health setup-config benchmark list-flows version quality-report
 
 # 显示帮助
 help:
 	@echo "Syno VideoInfo Plugin 开发工具"
 	@echo ""
 	@echo "可用命令："
-	@echo "  make help        - 显示此帮助信息"
-	@echo "  make validate    - 验证所有刮削源"
-	@echo "  make check-health - 刮削源健康检查"
-	@echo "  make test        - 运行所有测试"
-	@echo "  make test-unit   - 运行单元测试"
+	@echo "  make help           - 显示此帮助信息"
+	@echo "  make setup-config   - 创建默认配置文件"
+	@echo "  make validate       - 验证所有刮削源"
+	@echo "  make check-health   - 刮削源健康检查"
+	@echo "  make test           - 运行所有测试"
+	@echo "  make test-unit      - 运行单元测试"
 	@echo "  make test-integration - 运行集成测试"
-	@echo "  make test-movie  - 测试电影刮削"
-	@echo "  make test-tv     - 测试电视剧刮削"
-	@echo "  make package     - 打包插件"
-	@echo "  make clean       - 清理打包文件"
-	@echo "  make docs        - 生成文档（如果有）"
+	@echo "  make test-movie     - 测试电影刮削"
+	@echo "  make test-tv        - 测试电视剧刮削"
+	@echo "  make debug          - 调试模式（电影）"
+	@echo "  make debug-tv       - 调试模式（电视剧）"
+	@echo "  make benchmark      - 性能基准测试"
+	@echo "  make package        - 打包插件"
+	@echo "  make clean          - 清理打包文件"
+	@echo "  make list-flows     - 列出所有刮削源"
+	@echo "  make version        - 显示版本号"
+	@echo "  make quality-report - 生成质量报告"
 	@echo ""
+
+# 设置默认配置
+setup-config:
+	@echo "设置默认配置文件..."
+	@if [ ! -f config.json ]; then \
+		cp config.example.json config.json; \
+		echo "创建 config.json"; \
+	else \
+		echo "config.json 已存在"; \
+	fi
+	@if [ ! -f .env ]; then \
+		cp .env.example .env; \
+		echo "创建 .env"; \
+	else \
+		echo ".env 已存在"; \
+	fi
 
 # 验证刮削源
 validate:
@@ -52,6 +73,48 @@ debug-tv:
 	@echo "调试模式（电视剧）..."
 	python main.py --type tvshow --input "{\"title\":\"The Office\"}" --limit 1 --loglevel debug
 
+# 性能基准测试
+benchmark:
+	@echo "运行性能基准测试..."
+	@python -c "
+import asyncio
+import time
+import sys
+sys.path.insert(0, '.')
+
+print('=' * 80)
+print('性能基准测试')
+print('=' * 80)
+print()
+print('正在测试配置系统...')
+start = time.time()
+from scraper.config import get_config
+config = get_config()
+print(f'  配置系统: {(time.time() - start) * 1000:.2f}ms')
+print()
+print('正在测试质量系统...')
+start = time.time()
+from scraper.quality import DataQualityChecker
+checker = DataQualityChecker()
+print(f'  质量系统: {(time.time() - start) * 1000:.2f}ms')
+print()
+print('正在测试性能系统...')
+start = time.time()
+from scraper.performance import PerformanceMonitor
+monitor = PerformanceMonitor()
+print(f'  性能系统: {(time.time() - start) * 1000:.2f}ms')
+print()
+print('正在测试评分系统...')
+start = time.time()
+from scraper.ranking import SourceRanking
+ranking = SourceRanking()
+print(f'  评分系统: {(time.time() - start) * 1000:.2f}ms')
+print()
+print('=' * 80)
+print('所有系统测试完成！')
+print('=' * 80)
+"
+
 # 打包插件
 package:
 	@echo "检查 git 标签..."
@@ -73,6 +136,9 @@ clean:
 	rm -rf __pycache__
 	rm -rf */__pycache__
 	rm -rf */*/__pycache__
+	rm -rf .cache/
+	rm -f scraper.log
+	rm -f benchmark_results.json
 	find . -name "*.pyc" -delete
 	@echo "清理完成"
 
@@ -85,13 +151,13 @@ install-test:
 # 列出所有刮削源
 list-flows:
 	@echo "电影刮削源："
-	@ls -1 scrapeflows/*_movie.json | sort
+	@ls -1 scrapeflows/*_movie.json 2>/dev/null | sort || echo "无电影刮削源"
 	@echo ""
 	@echo "电视剧刮削源："
-	@ls -1 scrapeflows/*_tvshow.json | sort
+	@ls -1 scrapeflows/*_tvshow.json 2>/dev/null | sort || echo "无电视剧刮削源"
 	@echo ""
 	@echo "总计："
-	@ls -1 scrapeflows/*.json | wc -l
+	@ls -1 scrapeflows/*.json 2>/dev/null | wc -l
 
 # 显示版本
 version:
@@ -119,3 +185,32 @@ test-scrapeflows:
 test: test-unit test-integration test-scrapeflows
 	@echo ""
 	@echo "✅ 所有测试完成！"
+
+# 质量报告
+quality-report:
+	@echo "生成质量报告..."
+	@python -c "
+import sys
+sys.path.insert(0, '.')
+
+print('=' * 80)
+print('Syno VideoInfo 质量报告')
+print('=' * 80)
+print()
+print('已安装的质量工具：')
+print('  - scraper.config.ConfigManager - 配置管理系统')
+print('  - scraper.ranking.SourceRanking - 刮削源评分系统')
+print('  - scraper.quality.DataQualityChecker - 数据质量评估')
+print('  - scraper.performance.PerformanceMonitor - 性能监控')
+print('  - scraper.logger.LogManager - 日志管理')
+print()
+print('可用的测试命令：')
+print('  - make test-unit - 单元测试')
+print('  - make test-integration - 集成测试')
+print('  - make test-scrapeflows - 刮削源测试')
+print('  - make benchmark - 性能基准测试')
+print('  - make validate - 刮削源验证')
+print('  - make check-health - 健康检查')
+print()
+print('=' * 80)
+"
