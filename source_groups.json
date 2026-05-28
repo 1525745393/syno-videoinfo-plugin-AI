@@ -1,0 +1,211 @@
+{
+  "_comment": "刮削源分组配置文件 - 用于源的分类和管理",
+  "_version": "1.0",
+  "_last_updated": "2026-05-28",
+  "categories": {
+    "jav_database": {
+      "name": "JAV数据库",
+      "name_en": "JAV Database",
+      "description": "主要的JAV番号数据库，覆盖范围广",
+      "priority": 1,
+      "enabled": true,
+      "sources": [
+        "javbus_movie",
+        "javdb_movie",
+        "javlibrary_movie",
+        "javdbapi_movie"
+      ],
+      "tags": ["jav", "database", "primary"]
+    },
+    "dmm": {
+      "name": "DMM系列",
+      "name_en": "DMM Series",
+      "description": "DMM官方数据源",
+      "priority": 2,
+      "enabled": true,
+      "sources": [
+        "dmm_movie",
+        "mgstage_movie"
+      ],
+      "tags": ["dmm", "official", "japan"]
+    },
+    "fc2_series": {
+      "name": "FC2系列",
+      "name_en": "FC2 Series",
+      "description": "FC2番号专用刮削源",
+      "priority": 3,
+      "enabled": true,
+      "sources": [
+        "fc2_movie",
+        "fc2hub_movie",
+        "fc2club_movie",
+        "fc2ppvdb_movie"
+      ],
+      "tags": ["fc2", "ppv", "adult"]
+    },
+    "japanese_adult": {
+      "name": "日本成人内容",
+      "name_en": "Japanese Adult",
+      "description": "日本成人视频刮削源",
+      "priority": 4,
+      "enabled": true,
+      "sources": [
+        "prestige_movie",
+        "xcity_movie",
+        "avbase_movie",
+        "fantastica_movie",
+        "faleno_movie",
+        "missav_movie"
+      ],
+      "tags": ["japan", "adult", "variety"]
+    },
+    "asian_adult": {
+      "name": "亚洲成人内容",
+      "name_en": "Asian Adult",
+      "description": "亚洲成人视频刮削源",
+      "priority": 5,
+      "enabled": true,
+      "sources": [
+        "airav_movie",
+        "avsex_movie",
+        "avsox_movie",
+        "cableav_movie",
+        "freejavbt_movie",
+        "kin8_movie",
+        "lulubar_movie",
+        "love6_movie",
+        "mywife_movie",
+        "madouqu_movie",
+        "mdtv_movie",
+        "mmtv_movie",
+        "official_movie",
+        "getchu_movie",
+        "getchu_dl_movie",
+        "getchu_dmm_movie",
+        "giga_movie",
+        "theporndb_movie",
+        "hscangku_movie",
+        "dahlia_movie",
+        "iqqtv_movie"
+      ],
+      "tags": ["asian", "adult", "variety"]
+    },
+    "chinese": {
+      "name": "中文电影",
+      "name_en": "Chinese Movies",
+      "description": "中文电影刮削源",
+      "priority": 6,
+      "enabled": true,
+      "sources": [
+        "douban_movie",
+        "maoyan_movie",
+        "mtime_movie",
+        "hdouban_movie",
+        "cnmdb_movie",
+        "guochan_movie"
+      ],
+      "tags": ["chinese", "movie", "asia"]
+    },
+    "chinese_tvshow": {
+      "name": "中文电视剧",
+      "name_en": "Chinese TV Shows",
+      "description": "中文电视剧刮削源",
+      "priority": 7,
+      "enabled": true,
+      "sources": [
+        "douban_tvshow",
+        "douban_tvshow_v2",
+        "douban_tvshow_episode",
+        "maoyan_tvshow",
+        "maoyan_tvshow_v2",
+        "maoyan_tvshow_episode",
+        "mtime_tvshow",
+        "mtime_tvshow_episode"
+      ],
+      "tags": ["chinese", "tvshow", "series"]
+    },
+    "anime": {
+      "name": "动漫",
+      "name_en": "Anime",
+      "description": "动漫刮削源",
+      "priority": 8,
+      "enabled": true,
+      "sources": [
+        "bangumi_movie",
+        "bangumi_tvshow",
+        "bangumi_tvshow_episode",
+        "myanimelist_movie",
+        "kitsu_movie"
+      ],
+      "tags": ["anime", "japan", "cartoon"]
+    },
+    "international": {
+      "name": "国际电影",
+      "name_en": "International Movies",
+      "description": "国际电影刮削源",
+      "priority": 9,
+      "enabled": true,
+      "sources": [
+        "imdb_movie",
+        "tmdb_movie",
+        "allocine_movie",
+        "daum_movie",
+        "filmweb_movie",
+        "filmaffinity_movie",
+        "letterboxd_movie",
+        "rottentomatoes_movie",
+        "watcha_movie",
+        "bollywoodhung_movie"
+      ],
+      "tags": ["international", "movie", "hollywood"]
+    },
+    "international_tvshow": {
+      "name": "国际电视剧",
+      "name_en": "International TV Shows",
+      "description": "国际电视剧刮削源",
+      "priority": 10,
+      "enabled": true,
+      "sources": [
+        "imdb_tvshow",
+        "tmdb_tvshow",
+        "tmdb_tvshow_v2",
+        "tmdb_tvshow_episode",
+        "tvdb_tvshow"
+      ],
+      "tags": ["international", "tvshow", "series"]
+    }
+  },
+  "fallback_rules": {
+    "jav_database": {
+      "fallback_to": ["dmm", "fc2_series"],
+      "auto_switch": true
+    },
+    "fc2_series": {
+      "fallback_to": ["japanese_adult", "jav_database"],
+      "auto_switch": true
+    },
+    "chinese": {
+      "fallback_to": ["international"],
+      "auto_switch": true
+    }
+  },
+  "health_check": {
+    "enabled": true,
+    "interval_minutes": 60,
+    "alert_threshold": {
+      "success_rate": 0.5,
+      "response_time": 10,
+      "data_quality": 50
+    }
+  },
+  "priority_rules": {
+    "dynamic_adjustment": true,
+    "time_window_hours": 24,
+    "adjustment_factors": {
+      "success_rate_weight": 0.4,
+      "response_time_weight": 0.2,
+      "data_quality_weight": 0.3,
+      "stability_weight": 0.1
+    }
+  }
+}
