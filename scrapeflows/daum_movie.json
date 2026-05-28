@@ -1,0 +1,75 @@
+{
+  "type": "movie",
+  "site": "movie.daum.net",
+  "doh_enabled": false,
+  "lang": ["ko", "chs", "cht"],
+  "steps": [
+    {
+      "http": {
+        "url": "https://movie.daum.net/search?q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "movie_ids": ["re_matches", "/main/movie/posters/([0-9]+)"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "movie_ids",
+        "item": "movie_id",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://movie.daum.net/main/movie/posters/{movie_id}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "movie_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "movie_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "tit_gallery[^>]+>([^<]+)<"],
+                  "originaltitle": ["re_match", "txt_gallery[^>]+>([^<]+)<"],
+                  "original_available": ["re_match", "date-gallery[^>]+>([^<]+)<"],
+                  "summary": ["re_match", "desc_gallery[^>]+>([^<]+)<"],
+                  "genre": ["re_matches", "genre[^>]+>([^<]+)<"],
+                  "actor": ["re_matches", "actor[^>]+>([^<]+)<"],
+                  "director": ["re_matches", "director[^>]+>([^<]+)<"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "img[^>]+src=\"([^\"]+poster[^\"]+)\""],
+                      "rating": ["re_match", "rat-gauge[^>]+>([0-9.]+)"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

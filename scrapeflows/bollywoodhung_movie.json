@@ -1,0 +1,73 @@
+{
+  "type": "movie",
+  "site": "bollywoodhung.com",
+  "doh_enabled": true,
+  "lang": ["en"],
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.bollywoodhung.com/search?q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "movie_links": ["re_matches", "href=\"(/news/[^\"]+)\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "movie_links",
+        "item": "movie_link",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.bollywoodhung.com{movie_link}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "movie_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "movie_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "og:title[^>]+content=\"([^\"]+)\""],
+                  "original_available": ["re_match", "release-date[^>]+>([^<]+)<"],
+                  "summary": ["re_match", "og:description[^>]+content=\"([^\"]+)\""],
+                  "genre": ["re_matches", "genre[^>]+>([^<]+)<"],
+                  "actor": ["re_matches", "cast[^>]+>([^<]+)<"],
+                  "director": ["re_matches", "director[^>]+>([^<]+)<"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "og:image[^>]+content=\"([^\"]+)\""],
+                      "rating": ["re_match", "rating[^>]+>([0-9.]+)"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

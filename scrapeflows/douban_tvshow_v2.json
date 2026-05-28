@@ -1,0 +1,77 @@
+{
+  "type": "tvshow",
+  "site": "douban.tv",
+  "doh_enabled": false,
+  "lang": ["chs", "cht"],
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.douban.com/search?cat=1002&q={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "tv_ids": ["re_matches", "subject_id=([0-9]+)"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "tv_ids",
+        "item": "tv_id",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://movie.douban.com/subject/{tv_id}/",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "tv_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "tv_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "property=\"og:title\"[^>]+content=\"([^\"]+)\""],
+                  "originaltitle": ["re_match", "originalname[^>]+>([^<]+)<"],
+                  "original_available": ["re_match", "pubdate[^>]+>([^<]+)<"],
+                  "summary": ["re_match", "property=\"og:description\"[^>]+content=\"([^\"]+)\""],
+                  "genre": ["re_matches", "genre[^>]+property=\"article:genre\"[^>]+content=\"([^\"]+)\""],
+                  "actor": ["re_matches", "attrs[^>]+name=\"actor\"[^>]+title=\"([^\"]+)\""],
+                  "director": ["re_matches", "attrs[^>]+name=\"director\"[^>]+title=\"([^\"]+)\""],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "property=\"og:image\"[^>]+content=\"([^\"]+)\""],
+                      "rating": ["re_match", "rating_num[^>]+>([0-9.]+)</span"],
+                      "episodes": ["re_match", "episodes[^>]+>([^<]+)<"],
+                      "seasons": ["re_match", "episodes[^>]+>([^<]+)<"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

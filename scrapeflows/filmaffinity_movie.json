@@ -1,0 +1,74 @@
+{
+  "type": "movie",
+  "site": "filmaffinity.com",
+  "doh_enabled": true,
+  "lang": ["es", "en"],
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.filmaffinity.com/es/search.php?search={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "movie_ids": ["re_matches", "movie_id=([0-9]+)"]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "movie_ids",
+        "item": "movie_id",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://www.filmaffinity.com/es/movie.php?id={movie_id}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+              },
+              "timeout": 15,
+              "result": "movie_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "movie_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "og:title[^>]+content=\"([^\"]+)\""],
+                  "originaltitle": ["re_match", "original-title[^>]+>([^<]+)<"],
+                  "original_available": ["re_match", "year[^>]+>([0-9]{4})<"],
+                  "summary": ["re_match", "og:description[^>]+content=\"([^\"]+)\""],
+                  "genre": ["re_matches", "genre[^>]+>([^<]+)<"],
+                  "director": ["re_matches", "director[^>]+>([^<]+)<"],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "og:image[^>]+content=\"([^\"]+)\""],
+                      "rating": ["re_match", "rating[^>]+>([0-9.]+)"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

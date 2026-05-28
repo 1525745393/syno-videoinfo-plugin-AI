@@ -1,0 +1,83 @@
+{
+  "type": "movie",
+  "site": "kitsu.io",
+  "doh_enabled": true,
+  "lang": ["en", "ja"],
+  "config": {
+    "api_token": {
+      "icon": "key",
+      "name": "API Token (可选)"
+    }
+  },
+  "steps": [
+    {
+      "http": {
+        "url": "https://kitsu.io/api/edge/anime?filter[text]={title}",
+        "method": "GET",
+        "headers": {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/vnd.api+json"
+        },
+        "timeout": 15,
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "anime_ids": ["re_matches", "\"id\":\"([0-9]+)\""]
+        }
+      }
+    },
+    {
+      "loop": {
+        "source": "anime_ids",
+        "item": "anime_id",
+        "iferr": "continue",
+        "steps": [
+          {
+            "http": {
+              "url": "https://kitsu.io/api/edge/anime/{anime_id}",
+              "method": "GET",
+              "headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/vnd.api+json"
+              },
+              "timeout": 15,
+              "result": "anime_detail"
+            }
+          },
+          {
+            "collect": {
+              "source": "anime_detail",
+              "into": {
+                "movie": {
+                  "title": ["re_match", "\"canonicalTitle\":\"([^\"]+)\""],
+                  "originaltitle": ["re_match", "\"titles\":\\{[^}]*\"ja_jp\":\"([^\"]+)\""],
+                  "original_available": ["re_match", "\"startDate\":\"([^\"]+)\""],
+                  "summary": ["re_match", "\"synopsis\":\"([^\"]+)\""],
+                  "genre": ["re_matches", "\"name\":\"([^\"]+)\""],
+                  "extra": {
+                    "[plugin_id]": {
+                      "poster": ["re_match", "\"posterImage\":\\{[^}]*\"original\":\"([^\"]+)\""],
+                      "rating": ["re_match", "\"averageRating\":\"([0-9.]+)\""],
+                      "episodes": ["re_match", "\"episodeCount\":([0-9]+)"],
+                      "type": ["re_match", "\"showType\":\"([^\"]+)\""],
+                      "status": ["re_match", "\"status\":\"([^\"]+)\""]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "retval": {
+              "source": "movie"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
