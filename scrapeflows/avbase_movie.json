@@ -5,72 +5,17 @@
   "lang": ["ja"],
   "config": {},
   "steps": [
-    {
-      "http": {
-        "url": "https://www.avbase.net/works?q={title}",
-        "method": "GET",
-        "result": "search_result"
-      }
-    },
-    {
-      "collect": {
-        "source": "search_result",
-        "into": {
-          "detail_url": ["xp_attr", "(//a[starts-with(@href, '/works/') and not(starts-with(@href, '/works/date'))])[1]/@href"]
-        }
-      }
-    },
-    {
-      "http": {
-        "url": "https://www.avbase.net{detail_url}",
-        "method": "GET",
-        "result": "detail_content"
-      }
-    },
-    {
-      "collect": {
-        "source": "detail_content",
-        "into": {
-          "title": ["xp_text", "//h1/text()"],
-          "originaltitle": ["xp_text", "//h1/text()"],
-          "actors": ["xp_text_all", "//div[contains(@class, 'actor')]//a/text()", "//dt[contains(text(), '出演')]/following-sibling::dd//a/text()"],
-          "outline": ["xp_text", "//div[contains(@class, 'description')]/p/text()", "//p[contains(@class, 'note')]/text()"],
-          "originalplot": ["xp_text", "//div[contains(@class, 'description')]/p/text()", "//p[contains(@class, 'note')]/text()"],
-          "release": ["xp_text", "//dt[contains(text(), '発売日')]/following-sibling::dd/text()", "//dt[contains(text(), '日')]/following-sibling::dd/text()"],
-          "runtime": ["xp_text", "//dt[contains(text(), '収録時間')]/following-sibling::dd/text()", "//dt[contains(text(), '時間')]/following-sibling::dd/text()"],
-          "series": ["xp_text", "//dt[contains(text(), 'シリーズ')]/following-sibling::dd/a/text()", "//dt[contains(text(), 'シリーズ')]/following-sibling::dd/text()"],
-          "directors": ["xp_text_all", "//dt[contains(text(), '監督')]/following-sibling::dd//a/text()", "//dt[contains(text(), '監督')]/following-sibling::dd/text()"],
-          "studio": ["xp_text", "//dt[contains(text(), 'メーカー')]/following-sibling::dd/a/text()", "//dt[contains(text(), 'メーカー')]/following-sibling::dd/text()"],
-          "publisher": ["xp_text", "//dt[contains(text(), 'レーベル')]/following-sibling::dd/a/text()", "//dt[contains(text(), 'レーベル')]/following-sibling::dd/text()"],
-          "tags": ["xp_text_all", "//dt[contains(text(), 'ジャンル')]/following-sibling::dd//a/text()", "//div[contains(@class, 'tag')]//a/text()"],
-          "thumb": ["xp_attr", "//div[contains(@class, 'package')]/img/@src", "//div[contains(@class, 'image')]//img/@src"],
-          "poster": ["xp_attr", "//div[contains(@class, 'package')]/img/@src", "//div[contains(@class, 'image')]//img/@src"],
-          "extrafanart": ["xp_attr_all", "//div[contains(@class, 'sample')]//a/@href", "//div[contains(@class, 'screenshot')]//a/@href"],
-          "trailer": ["xp_attr", "//div[contains(@class, 'trailer')]//a/@href"]
-        }
-      }
-    },
-    {
-      "retval": {
-        "title": "{title}",
-        "originaltitle": "{originaltitle}",
-        "actors": "{actors}",
-        "outline": "{outline}",
-        "originalplot": "{originalplot}",
-        "release": "{release.replace('/', '-')}",
-        "year": "{re.findall('\\\\d{4}', release)[0] if release and len(re.findall('\\\\d{4}', release)) > 0 else ''}",
-        "runtime": "{re.findall('\\\\d+', runtime)[0] if runtime and len(re.findall('\\\\d+', runtime)) > 0 else ''}",
-        "series": "{series}",
-        "directors": "{directors}",
-        "studio": "{studio}",
-        "publisher": "{publisher if publisher else studio}",
-        "tags": "{tags}",
-        "thumb": "{thumb if thumb.startswith('http') else ('https://www.avbase.net' + thumb)}",
-        "poster": "{poster if poster.startswith('http') else ('https://www.avbase.net' + poster)}",
-        "extrafanart": "{[url if url.startswith('http') else ('https://www.avbase.net' + url) for url in extrafanart]}",
-        "trailer": "{trailer}",
-        "mosaic": "有码"
-      }
-    }
+    {"http": {"url": "https://www.avbase.net/works?q={title}", "method": "GET", "result": "search_result"}},
+    {"collect": {"source": "search_result", "into": {"detail_url": ["xp_attr", "//a[starts-with(@href, '/works/') and not(contains(@href, '/date'))][1]/@href"]}}},
+    {"http": {"url": "https://www.avbase.net{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"next_data": ["xp_text", "//script[@id='__NEXT_DATA__']/text()"]}}},
+    {"transform": {"expression": "import json; data = json.loads(next_data); work = data.get('props', {}).get('pageProps', {}).get('work', {})"}},
+    {"collect": {"source": "detail_content", "into": {"number": ["json_path", "work.work_id"], "title": ["json_path", "work.title"], "outline": ["json_path", "work.note"], "actors": ["json_path", "work.casts"], "thumb": ["json_path", "work.products[0].image_url"], "release": ["json_path", "work.products[0].date"], "studio": ["json_path", "work.products[0].maker.name"], "publisher": ["json_path", "work.products[0].label.name"], "series": ["json_path", "work.products[0].series.name"], "genres": ["json_path", "work.genres"], "tags": ["json_path", "work.tags"]}}},
+    {"transform": {"expression": "actor_list = [a.get('actor', {}).get('name', '') for a in actors if isinstance(a, dict) and a.get('actor')] if actors else []"}},
+    {"transform": {"expression": "tag_list = [g.get('name', '') for g in genres if isinstance(g, dict) and g.get('name')] + [t.get('name', '') for t in tags if isinstance(t, dict) and t.get('name')] if genres or tags else []"}},
+    {"transform": {"expression": "release = re.findall(r'\\d{4}-\\d{2}-\\d{2}', release)[0] if release else ''"}},
+    {"transform": {"expression": "year = release[:4] if release else ''"}},
+    {"transform": {"expression": "thumb = 'https://www.avbase.net' + thumb if thumb and not thumb.startswith('http') else thumb"}},
+    {"retval": {"title": "{title}", "originaltitle": "{title}", "number": "{number}", "actors": "{actor_list}", "outline": "{outline}", "tags": "{tag_list}", "release": "{release}", "year": "{year}", "series": "{series}", "studio": "{studio}", "publisher": "{publisher if publisher else studio}", "thumb": "{thumb}", "poster": "{thumb.replace('pl.jpg', 'ps.jpg') if thumb else ''}", "mosaic": "有码", "external_id": "https://www.avbase.net{detail_url}"}}
   ]
 }
