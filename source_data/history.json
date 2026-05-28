@@ -79,5 +79,32 @@
     "quality": 0.0,
     "number": "",
     "title": ""
+  },
+  {
+    "source": "example_source_1",
+    "timestamp": 1780009879.556524,
+    "success": true,
+    "duration": 1.2,
+    "quality": 85.0,
+    "number": "EX-001",
+    "title": "Example Video 1"
+  },
+  {
+    "source": "example_source_1",
+    "timestamp": 1780009879.5569375,
+    "success": true,
+    "duration": 0.9,
+    "quality": 92.0,
+    "number": "EX-002",
+    "title": "Example Video 2"
+  },
+  {
+    "source": "example_source_2",
+    "timestamp": 1780009879.5575705,
+    "success": false,
+    "duration": 3.5,
+    "quality": 0.0,
+    "number": "EX-003",
+    "title": "Example Video 3"
   }
 ]

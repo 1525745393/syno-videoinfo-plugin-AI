@@ -2,4 +2,8 @@
 
 __all__ = ["scrape"]
 
-from scraper.scraper import scrape
+# Try to use enhanced version if available, else fall back to original
+try:
+    from scraper.scraper_enhanced import scrape
+except ImportError:
+    from scraper.scraper import scrape

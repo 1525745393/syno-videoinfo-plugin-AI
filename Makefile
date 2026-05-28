@@ -1,5 +1,5 @@
 # Makefile for Syno VideoInfo Plugin
-.PHONY: help test validate package clean test-unit test-integration check-health setup-config benchmark list-flows version quality-report source-list source-status source-search source-stats source-export
+.PHONY: help test validate package clean test-unit test-integration check-health setup-config benchmark list-flows version quality-report source-list source-status source-search source-stats source-export source-history source-enable source-disable source-reset source-save source-upgrade source-demo
 
 # 显示帮助
 help:
@@ -29,7 +29,14 @@ help:
 	@echo "  make source-status    - 显示源健康状态"
 	@echo "  make source-search q=  - 搜索源 (make source-search q=jav)"
 	@echo "  make source-stats     - 显示统计信息"
+	@echo "  make source-history   - 显示刮削历史"
+	@echo "  make source-save      - 保存数据"
 	@echo "  make source-export    - 导出配置"
+	@echo "  make source-enable source= - 启用源"
+	@echo "  make source-disable source= - 禁用源"
+	@echo "  make source-reset source= - 重置源"
+	@echo "  make source-demo      - 运行演示"
+	@echo "  make source-upgrade   - 升级系统"
 	@echo ""
 
 # 设置默认配置
@@ -254,3 +261,43 @@ source-stats:
 source-export:
 	@echo "导出配置..."
 	python scripts/source_manager.py export
+
+source-history:
+	@echo "刮削历史..."
+	python scripts/source_manager.py history
+
+source-enable:
+	@if [ "$(source)" = "" ]; then \
+		echo "请提供源名称，例如：make source-enable source=javbus_movie"; \
+	else \
+		echo "启用源：$(source)"; \
+		python scripts/source_manager.py enable "$(source)"; \
+	fi
+
+source-disable:
+	@if [ "$(source)" = "" ]; then \
+		echo "请提供源名称，例如：make source-disable source=bad_source"; \
+	else \
+		echo "禁用源：$(source)"; \
+		python scripts/source_manager.py disable "$(source)"; \
+	fi
+
+source-reset:
+	@if [ "$(source)" = "" ]; then \
+		echo "请提供源名称，例如：make source-reset source=javbus_movie"; \
+	else \
+		echo "重置源：$(source)"; \
+		python scripts/source_manager.py reset "$(source)"; \
+	fi
+
+source-save:
+	@echo "保存数据..."
+	python scripts/source_manager.py save
+
+source-upgrade:
+	@echo "升级源管理系统..."
+	python upgrade_source_management.py
+
+source-demo:
+	@echo "运行源管理演示..."
+	python scripts/demo_source_management.py
