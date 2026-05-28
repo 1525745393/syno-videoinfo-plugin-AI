@@ -1,0 +1,72 @@
+{
+  "type": "movie",
+  "site": "www.giga-web.jp",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.giga-web.jp/search/?keyword={title}",
+        "method": "GET",
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_url": ["xp_attr", "//div[@class='search_sam_box']//a/@href"]
+        }
+      }
+    },
+    {
+      "http": {
+        "url": "https://www.giga-web.jp{detail_url}",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//div[@id='works_pic']/ul/li/h5/text()"],
+          "originaltitle": ["xp_text", "//div[@id='works_pic']/ul/li/h5/text()"],
+          "actors": ["xp_text_all", "//span[@class='yaku']/a/text()"],
+          "outline": ["xp_text", "string(//div[@id='story_list2']/ul/li[@class='story_window']/text())"],
+          "originalplot": ["xp_text", "string(//div[@id='eye_list2']/ul/li[@class='story_window']/text())"],
+          "release": ["xp_text", "//dt[contains(text(),'リリース')]/following-sibling::dd/text()"],
+          "runtime": ["xp_text", "//dt[contains(text(),'収録時間')]/following-sibling::dd/text()"],
+          "directors": ["xp_text", "//dt[contains(text(),'監督')]/following-sibling::dd/text()"],
+          "tags": ["xp_text_all", "//div[@id='tag_main']/a/text()"],
+          "thumb": ["xp_attr", "//div[@class='smh']/li/ul/li/a/@href"],
+          "poster": ["xp_attr", "//div[@class='smh']/li/ul/li/a/img/@src"],
+          "extrafanart": ["xp_attr_all", "//div[@class='gasatsu_images_pc']/div/div/a/@href"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{title}",
+        "actors": "{actors}",
+        "outline": "{outline}",
+        "originalplot": "{originalplot}",
+        "release": "{release.replace('/', '-')}",
+        "year": "{release[:4] if release and len(release) >= 4 else ''}",
+        "runtime": "{re.findall('\\\\d+', runtime)[0] if runtime and len(re.findall('\\\\d+', runtime)) > 0 else ''}",
+        "series": "",
+        "directors": "{directors}",
+        "studio": "GIGA",
+        "publisher": "GIGA",
+        "tags": "{tags}",
+        "thumb": "{thumb.replace('http://', 'https://')}",
+        "poster": "{poster if poster else thumb.replace('pac_l', 'pac_s').replace('http://', 'https://')}",
+        "extrafanart": "{['https://www.giga-web.jp' + x for x in extrafanart]}",
+        "trailer": "",
+        "mosaic": "有码"
+      }
+    }
+  ]
+}

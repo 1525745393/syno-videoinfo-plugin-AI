@@ -1,0 +1,75 @@
+{
+  "type": "movie",
+  "site": "xcity.jp",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://xcity.jp/result_published/?q={title.replace('-', '')}",
+        "method": "GET",
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_url": ["xp_attr", "//table[@class='resultList']/tr/td/a/@href"]
+        }
+      }
+    },
+    {
+      "http": {
+        "url": "https://xcity.jp{detail_url}",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//span[@id='program_detail_title']/text()"],
+          "originaltitle": ["xp_text", "//span[@id='program_detail_title']/text()"],
+          "actors": ["xp_text_all", "//li[@class='credit-links']/a/text()"],
+          "outline": ["xp_text", "//p[@class='lead']/text()"],
+          "originalplot": ["xp_text", "//p[@class='lead']/text()"],
+          "release": ["xp_text", "//li/span[@class='koumoku' and (contains(text(), '発売日'))]/../text()"],
+          "runtime": ["xp_text", "//span[@class='koumoku'][contains(text(), '収録時間')]/../text()"],
+          "directors": ["xp_text", "//span[@id='program_detail_director']/text()"],
+          "studio": ["xp_text", "//span[@id='program_detail_maker_name']/text()"],
+          "publisher": ["xp_text", "//span[@id='program_detail_label_name']/text()"],
+          "series": ["xp_text", "//a[contains(@href, 'series')]/span/text()"],
+          "tags": ["xp_text_all", "//a[@class='genre']/text()"],
+          "thumb": ["xp_attr", "//div[@class='photo']/p/a/@href"],
+          "poster": ["xp_attr", "//img[@class='packageThumb']/@src"],
+          "extrafanart": ["xp_attr_all", "//a[contains(@class, 'thumb')]/@href"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{title}",
+        "actors": "{actors}",
+        "outline": "{outline.strip()}",
+        "originalplot": "{outline.strip()}",
+        "release": "{re.findall('\\\\d+/\\\\d+/\\\\d+', release)[0].replace('/', '-') if release and len(re.findall('\\\\d+/\\\\d+/\\\\d+', release)) > 0 else ''}",
+        "year": "{release[:4] if release and len(release) >= 4 else ''}",
+        "runtime": "{re.findall('\\\\d+', runtime)[0] if runtime and len(re.findall('\\\\d+', runtime)) > 0 else ''}",
+        "series": "{series}",
+        "directors": "{directors}",
+        "studio": "{studio}",
+        "publisher": "{publisher}",
+        "tags": "{tags}",
+        "thumb": "{'https:' + thumb if thumb else ''}",
+        "poster": "{'https:' + poster.replace('package/medium/', '') if poster else ''}",
+        "extrafanart": "{[x.replace('//faws.xcity.jp/scene/small/', 'https://faws.xcity.jp/') for x in extrafanart]}",
+        "trailer": "",
+        "mosaic": "有码"
+      }
+    }
+  ]
+}

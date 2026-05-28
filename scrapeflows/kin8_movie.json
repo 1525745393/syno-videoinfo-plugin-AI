@@ -1,0 +1,57 @@
+{
+  "type": "movie",
+  "site": "www.kin8tengoku.com",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.kin8tengoku.com/moviepages/{title.replace('KIN8', '').replace('TENGOKU', '').replace('-', '')}/index.html",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//p[contains(@class, 'sub_title')]/text()", "//*[contains(@class, 'Movie_Detail_title-img')]//img/@alt"],
+          "originaltitle": ["xp_text", "//p[contains(@class, 'sub_title')]/text()", "//*[contains(@class, 'Movie_Detail_title-img')]//img/@alt"],
+          "actors": ["xp_text_all", "//div[@class='icon']/a[contains(@href, 'listpages/actor')]/text()"],
+          "outline": ["xp_text", "normalize-space(string(//div[@id='comment']))", "normalize-space(string(//*[contains(@class, 'Movie_Detail_memo')]))"],
+          "originalplot": ["xp_text", "normalize-space(string(//div[@id='comment']))", "normalize-space(string(//*[contains(@class, 'Movie_Detail_memo')]))"],
+          "release": ["xp_text", "string(//td[@class='movie_table_td' and contains(text(), '更新日')]/following-sibling::td)", "//*[contains(@class, 'Movie_Detail_date-movie')]//span/text()"],
+          "runtime": ["xp_text", "string(//td[@class='movie_table_td' and contains(text(), '再生時間')]/following-sibling::td)"],
+          "tags": ["xp_text_all", "//td[@class='movie_table_td' and contains(text(), 'カテゴリー')]/following-sibling::td/div/a/text()", "//*[contains(@class, 'Movie_Detail_actor-type')]//a/text()"],
+          "thumb": ["xp_attr", "//video/@poster", "//meta[@property='og:image']/@content"],
+          "poster": ["xp_attr", "//video/@poster", "//meta[@property='og:image']/@content"],
+          "extrafanart": ["xp_attr_all", "//img[@class='white_gallery ']/@src"],
+          "trailer": ["xp_attr", "//video/@src", "//meta[@property='og:video']/@content"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{title}",
+        "actors": "{actors}",
+        "outline": "{outline}",
+        "originalplot": "{outline}",
+        "release": "{release.replace('/', '-')}",
+        "year": "{re.findall('\\\\d{4}', release)[0] if release and len(re.findall('\\\\d{4}', release)) > 0 else ''}",
+        "runtime": "{runtime.split(':')[0] if runtime and ':' in runtime else runtime}",
+        "series": "",
+        "directors": [],
+        "studio": "kin8tengoku",
+        "publisher": "kin8tengoku",
+        "tags": "{tags}",
+        "thumb": "{thumb}",
+        "poster": "{poster}",
+        "extrafanart": "{[x.replace('/2.jpg', '/2_lg.jpg').replace('/3.jpg', '/3_lg.jpg').replace('/4.jpg', '/4_lg.jpg') for x in extrafanart]}",
+        "trailer": "{trailer}",
+        "mosaic": "无码"
+      }
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "type": "movie",
+  "site": "www.getchu.com",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.getchu.com/php/search.phtml?genre=all&search_keyword={title}&gc=gc",
+        "method": "GET",
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_url": ["xp_attr", "//a[@class='blueb']/@href"]
+        }
+      }
+    },
+    {
+      "http": {
+        "url": "https://www.getchu.com{detail_url.replace('../', '/')}&gc=gc",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//h1[@id='soft-title']/text()", "//meta[@property='og:title']/@content"],
+          "originaltitle": ["xp_text", "//h1[@id='soft-title']/text()", "//meta[@property='og:title']/@content"],
+          "outline": ["xp_text", "string(//div[@class='tablebody'])"],
+          "originalplot": ["xp_text", "string(//div[@class='tablebody'])"],
+          "release": ["xp_text", "//td[contains(text(),'発売日：')]/following-sibling::td/a/text()"],
+          "runtime": ["xp_text", "//td[contains(text(),'時間：')]/following-sibling::td/text()"],
+          "studio": ["xp_text", "//a[@class='glance']/text()"],
+          "tags": ["xp_text_all", "//td[contains(text(), 'サブジャンル：') or contains(text(), 'カテゴリ：')]/following-sibling::td/a/text()"],
+          "thumb": ["xp_attr", "//meta[@property='og:image']/@content"],
+          "poster": ["xp_attr", "//meta[@property='og:image']/@content"],
+          "extrafanart": ["xp_attr_all", "//div[contains(text(),'サンプル画像')]/following-sibling::div[1]/a/@href", "//div[contains(@class,'item-Samplecard')]//a[contains(@class,'highslide')]/@href"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{title}",
+        "actors": [],
+        "outline": "{outline}",
+        "originalplot": "{outline}",
+        "release": "{release.replace('/', '-')}",
+        "year": "{release[:4] if release and len(release) >= 4 else ''}",
+        "runtime": "{re.findall('\\\\d+', runtime)[0] if runtime and len(re.findall('\\\\d+', runtime)) > 0 else ''}",
+        "series": "",
+        "directors": [],
+        "studio": "{studio}",
+        "publisher": "",
+        "tags": "{tags}",
+        "thumb": "{thumb if thumb.startswith('http') else ('http://www.getchu.com' + thumb)}",
+        "poster": "{poster if poster.startswith('http') else ('http://www.getchu.com' + poster)}",
+        "extrafanart": "{[x.replace('./', 'https://www.getchu.com/') for x in extrafanart]}",
+        "trailer": "",
+        "mosaic": "里番"
+      }
+    }
+  ]
+}
