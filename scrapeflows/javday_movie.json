@@ -1,0 +1,52 @@
+{
+  "type": "movie",
+  "site": "javday.tv",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://javday.tv/videos/{title}/",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//*[@id=\"videoInfo\"]/div/h1"],
+          "originaltitle": ["xp_text", "//*[@id=\"videoInfo\"]/div/h1"],
+          "series": ["xp_text", "//*[@id=\"videoInfo\"]/div/div/p[3]/span[2]/a/text()"],
+          "tags": ["xp_text_all", "//div[@class=\"category\"]/a[contains(@href, \"/class/\")]/text()"],
+          "actors": ["xp_text_all", "//*[@id=\"videoInfo\"]/div/div/p[1]/span[2]/a/text()"],
+          "thumb": ["xp_attr", "/html/head/meta[8]/@content"],
+          "poster": ["xp_attr", "/html/head/meta[8]/@content"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{title}",
+        "actors": "{actors}",
+        "outline": "",
+        "originalplot": "",
+        "release": "",
+        "year": "",
+        "runtime": "",
+        "series": "{series}",
+        "directors": [],
+        "studio": "{series}",
+        "publisher": "{series}",
+        "tags": "{tags}",
+        "thumb": "{thumb if thumb.startswith('http') else ('https://javday.tv' + thumb)}",
+        "poster": "{poster if poster.startswith('http') else ('https://javday.tv' + poster)}",
+        "extrafanart": [],
+        "trailer": "",
+        "mosaic": "国产"
+      }
+    }
+  ]
+}

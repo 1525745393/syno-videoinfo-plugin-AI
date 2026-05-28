@@ -1,0 +1,76 @@
+{
+  "type": "movie",
+  "site": "www.prestige-av.com",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.prestige-av.com/api/search?isEnabledQuery=true&searchText={title}&isEnableAggregation=false&release=false&reservation=false&soldOut=false&from=0&aggregationTermsSize=0&size=20",
+        "method": "GET",
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "productUuid": ["json_path", "$.hits.hits[?(@._source.deliveryItemId.endsWith('{title.upper()}'))]._source.productUuid"]
+        }
+      }
+    },
+    {
+      "http": {
+        "url": "https://www.prestige-av.com/api/product/{productUuid}",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["json_path", "$.title"],
+          "originaltitle": ["json_path", "$.title"],
+          "outline": ["json_path", "$.body"],
+          "originalplot": ["json_path", "$.body"],
+          "release": ["json_path", "$.sku[0].salesStartAt"],
+          "runtime": ["json_path", "$.playTime"],
+          "series": ["json_path", "$.series.name"],
+          "studio": ["json_path", "$.maker.name"],
+          "publisher": ["json_path", "$.label.name"],
+          "actors": ["json_path", "$.actress[*].name"],
+          "tags": ["json_path", "$.genre[*].name"],
+          "directors": ["json_path", "$.directors[*].name"],
+          "thumb": ["json_path", "$.packageImage.path"],
+          "poster": ["json_path", "$.thumbnail.path"],
+          "extrafanart": ["json_path", "$.media[*].path"],
+          "trailer": ["json_path", "$.movie.path"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title.replace('【配信専用】', '')}",
+        "originaltitle": "{title.replace('【配信専用】', '')}",
+        "actors": "{[x.replace(' ', '') for x in actors]}",
+        "outline": "{outline}",
+        "originalplot": "{outline}",
+        "release": "{release[:10] if release else ''}",
+        "year": "{release[:4] if release else ''}",
+        "runtime": "{runtime}",
+        "series": "{series}",
+        "directors": "{directors}",
+        "studio": "{studio}",
+        "publisher": "{publisher}",
+        "tags": "{tags}",
+        "thumb": "{('https://www.prestige-av.com/api/media/' + thumb) if thumb and 'noimage' not in thumb else ''}",
+        "poster": "{('https://www.prestige-av.com/api/media/' + poster) if poster and 'noimage' not in poster else ''}",
+        "extrafanart": "{['https://www.prestige-av.com/api/media/' + x for x in extrafanart]}",
+        "trailer": "{('https://www.prestige-av.com/api/media/' + trailer) if trailer else ''}",
+        "mosaic": "有码"
+      }
+    }
+  ]
+}

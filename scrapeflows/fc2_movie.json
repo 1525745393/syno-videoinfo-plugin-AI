@@ -1,0 +1,55 @@
+{
+  "type": "movie",
+  "site": "adult.contents.fc2.com",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://adult.contents.fc2.com/article/{title.upper().replace(\"FC2-PPV-\", \"\").replace(\"FC2PPV\", \"\").replace(\"FC2-\", \"\").replace(\"-\", \"\").strip()}/",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//div[@data-section=\"userInfo\"]//h3/span/../text()"],
+          "originaltitle": ["xp_text", "//div[@data-section=\"userInfo\"]//h3/span/../text()"],
+          "thumb": ["xp_attr", "(//ul[@class=\"items_article_SampleImagesArea\"]/li/a/@href)[1]"],
+          "poster": ["xp_attr", "//div[@class=\"items_article_MainitemThumb\"]/span/img/@src"],
+          "extrafanart": ["xp_attr_all", "//ul[@class=\"items_article_SampleImagesArea\"]/li/a/@href"],
+          "release": ["xp_text", "//div[@class=\"items_article_Releasedate\"]/p/text()"],
+          "studio": ["xp_text", "//div[@class=\"items_article_headerInfo\"]/ul/li[last()]/a/text()"],
+          "tags": ["xp_text_all", "//a[@class=\"tag tagTag\"]/text()"],
+          "runtime": ["xp_text", "string(//p[@class=\"items_article_info\"])"],
+          "outline": ["xp_text", "string(//section[contains(@class, \"items_article_Contents\")])"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title.strip()}",
+        "originaltitle": "{title.strip()}",
+        "actors": [],
+        "outline": "{outline.strip()}",
+        "originalplot": "{outline.strip()}",
+        "release": "{release.replace('/', '-').strip()}",
+        "year": "{release[:4] if release and len(release) >= 4 else ''}",
+        "runtime": "{runtime.split(':')[0] if runtime and ':' in runtime else ''}",
+        "series": "FC2系列",
+        "directors": [],
+        "studio": "{studio.strip()}",
+        "publisher": "{studio.strip()}",
+        "tags": "{tags}",
+        "thumb": "{thumb if thumb.startswith('http') else ('https:' + thumb)}",
+        "poster": "{poster if poster.startswith('http') else ('https:' + poster)}",
+        "extrafanart": "{[x if x.startswith('http') else ('https:' + x) for x in extrafanart]}",
+        "trailer": "",
+        "mosaic": "无码"
+      }
+    }
+  ]
+}
