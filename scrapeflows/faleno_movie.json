@@ -1,0 +1,163 @@
+{
+  "type": "movie",
+  "site": "faleno.jp",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://faleno.jp/top/works/{title.replace(\"-\", \"\").lower()}/",
+        "method": "GET",
+        "result": "direct_url"
+      }
+    },
+    {
+      "http": {
+        "url": "https://faleno.jp/top/works/{title.lower()}/",
+        "method": "GET",
+        "result": "direct_url_2",
+        "skip": "direct_url"
+      }
+    },
+    {
+      "http": {
+        "url": "https://falenogroup.com/works/{title.lower()}/",
+        "method": "GET",
+        "result": "direct_url_3",
+        "skip": "direct_url"
+      }
+    },
+    {
+      "http": {
+        "url": "https://falenogroup.com/works/{title.replace(\"-\", \"\").lower()}/",
+        "method": "GET",
+        "result": "direct_url_4",
+        "skip": "direct_url"
+      }
+    },
+    {
+      "http": {
+        "url": "https://faleno.jp/top/?s={title.replace(\"-\", \" \")}",
+        "method": "GET",
+        "result": "search_result",
+        "skip": "direct_url"
+      }
+    },
+    {
+      "http": {
+        "url": "https://falenogroup.com/top/?s={title.replace(\"-\", \" \")}",
+        "method": "GET",
+        "result": "search_result_2",
+        "skip": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "direct_url",
+        "into": {
+          "detail_content": "direct_url"
+        }
+      }
+    },
+    {
+      "collect": {
+        "source": "direct_url_2",
+        "into": {
+          "detail_content": "direct_url_2"
+        },
+        "skip": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "direct_url_3",
+        "into": {
+          "detail_content": "direct_url_3"
+        },
+        "skip": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "direct_url_4",
+        "into": {
+          "detail_content": "direct_url_4"
+        },
+        "skip": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_url": ["xp_attr", "//div[@class=\"text_name\"]/a/@href"]
+        },
+        "skip": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result_2",
+        "into": {
+          "detail_url": ["xp_attr", "//div[@class=\"text_name\"]/a/@href"]
+        },
+        "skip": "detail_url"
+      }
+    },
+    {
+      "http": {
+        "url": "{detail_url}",
+        "method": "GET",
+        "result": "detail_content",
+        "skip": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//h1"],
+          "originaltitle": ["xp_text", "//h1"],
+          "actors": ["xp_text_all", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"出演女優\"]]/p//text()"],
+          "outline": ["xp_text", "string(//div[@class='box_works01_text']/p)"],
+          "originalplot": ["xp_text", "string(//div[@class='box_works01_text']/p)"],
+          "release": ["xp_text", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"発売日\"]]/p//text()"],
+          "runtime": ["xp_text", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"収録時間\"]]/p//text()"],
+          "series": ["xp_text", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"系列\"]]/p//text()", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"シリーズ\"]]/p//text()"],
+          "directors": ["xp_text", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"导演\"]]/p//text()", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"導演\"]]/p//text()", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"監督\"]]/p//text()"],
+          "studio": ["xp_text", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"メーカー\"]]/p//text()", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"レーベル\"]]/p//text()"],
+          "publisher": ["xp_text", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"メーカー\"]]/p//text()", "//div[contains(@class, \"box_works01_list\")]//li[contains(@class, \"clearfix\")][span[normalize-space()=\"レーベル\"]]/p//text()"],
+          "tags": ["xp_text_all", "//a[@class=\"genre\"]//text()"],
+          "thumb": ["xp_attr", "//a[@class='pop_sample']/img/@src"],
+          "poster": ["xp_attr", "//a[@class='pop_sample']/img/@src"],
+          "extrafanart": ["xp_attr_all", "//a[@class='pop_img']/@href"],
+          "trailer": ["xp_attr", "//a[@class='pop_sample']/@href"],
+          "mosaic": "有码"
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{originaltitle}",
+        "actors": "{actors}",
+        "outline": "{outline}",
+        "originalplot": "{originalplot}",
+        "release": "{release.replace('/', '-')}",
+        "year": "{re.findall('\\d{4}', release)[0] if release and len(re.findall('\\d{4}', release)) > 0 else ''}",
+        "runtime": "{re.findall('\\d+', runtime)[0] if runtime and len(re.findall('\\d+', runtime)) > 0 else ''}",
+        "series": "{series}",
+        "directors": "{directors}",
+        "studio": "{studio if studio else 'FALENO'}",
+        "publisher": "{publisher if publisher else 'FALENO'}",
+        "tags": "{tags}",
+        "thumb": "{thumb.replace('?output-quality=60', '')}",
+        "poster": "{thumb.replace('?output-quality=60', '').replace('_1200.jpg', '_2125.jpg').replace('_tsp.jpg', '_actor.jpg').replace('1200_re', '2125').replace('_1200-1', '_2125-1')}",
+        "extrafanart": "{extrafanart}",
+        "trailer": "{trailer}",
+        "mosaic": "{mosaic}"
+      }
+    }
+  ]
+}

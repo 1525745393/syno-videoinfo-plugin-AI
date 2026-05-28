@@ -1,0 +1,76 @@
+{
+  "type": "movie",
+  "site": "avbase.net",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.avbase.net/works?q={title}",
+        "method": "GET",
+        "result": "search_result"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_result",
+        "into": {
+          "detail_url": ["xp_attr", "(//a[starts-with(@href, '/works/') and not(starts-with(@href, '/works/date'))])[1]/@href"]
+        }
+      }
+    },
+    {
+      "http": {
+        "url": "https://www.avbase.net{detail_url}",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//h1/text()"],
+          "originaltitle": ["xp_text", "//h1/text()"],
+          "actors": ["xp_text_all", "//div[contains(@class, 'actor')]//a/text()", "//dt[contains(text(), '出演')]/following-sibling::dd//a/text()"],
+          "outline": ["xp_text", "//div[contains(@class, 'description')]/p/text()", "//p[contains(@class, 'note')]/text()"],
+          "originalplot": ["xp_text", "//div[contains(@class, 'description')]/p/text()", "//p[contains(@class, 'note')]/text()"],
+          "release": ["xp_text", "//dt[contains(text(), '発売日')]/following-sibling::dd/text()", "//dt[contains(text(), '日')]/following-sibling::dd/text()"],
+          "runtime": ["xp_text", "//dt[contains(text(), '収録時間')]/following-sibling::dd/text()", "//dt[contains(text(), '時間')]/following-sibling::dd/text()"],
+          "series": ["xp_text", "//dt[contains(text(), 'シリーズ')]/following-sibling::dd/a/text()", "//dt[contains(text(), 'シリーズ')]/following-sibling::dd/text()"],
+          "directors": ["xp_text_all", "//dt[contains(text(), '監督')]/following-sibling::dd//a/text()", "//dt[contains(text(), '監督')]/following-sibling::dd/text()"],
+          "studio": ["xp_text", "//dt[contains(text(), 'メーカー')]/following-sibling::dd/a/text()", "//dt[contains(text(), 'メーカー')]/following-sibling::dd/text()"],
+          "publisher": ["xp_text", "//dt[contains(text(), 'レーベル')]/following-sibling::dd/a/text()", "//dt[contains(text(), 'レーベル')]/following-sibling::dd/text()"],
+          "tags": ["xp_text_all", "//dt[contains(text(), 'ジャンル')]/following-sibling::dd//a/text()", "//div[contains(@class, 'tag')]//a/text()"],
+          "thumb": ["xp_attr", "//div[contains(@class, 'package')]/img/@src", "//div[contains(@class, 'image')]//img/@src"],
+          "poster": ["xp_attr", "//div[contains(@class, 'package')]/img/@src", "//div[contains(@class, 'image')]//img/@src"],
+          "extrafanart": ["xp_attr_all", "//div[contains(@class, 'sample')]//a/@href", "//div[contains(@class, 'screenshot')]//a/@href"],
+          "trailer": ["xp_attr", "//div[contains(@class, 'trailer')]//a/@href"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{originaltitle}",
+        "actors": "{actors}",
+        "outline": "{outline}",
+        "originalplot": "{originalplot}",
+        "release": "{release.replace('/', '-')}",
+        "year": "{re.findall('\\\\d{4}', release)[0] if release and len(re.findall('\\\\d{4}', release)) > 0 else ''}",
+        "runtime": "{re.findall('\\\\d+', runtime)[0] if runtime and len(re.findall('\\\\d+', runtime)) > 0 else ''}",
+        "series": "{series}",
+        "directors": "{directors}",
+        "studio": "{studio}",
+        "publisher": "{publisher if publisher else studio}",
+        "tags": "{tags}",
+        "thumb": "{thumb if thumb.startswith('http') else ('https://www.avbase.net' + thumb)}",
+        "poster": "{poster if poster.startswith('http') else ('https://www.avbase.net' + poster)}",
+        "extrafanart": "{[url if url.startswith('http') else ('https://www.avbase.net' + url) for url in extrafanart]}",
+        "trailer": "{trailer}",
+        "mosaic": "有码"
+      }
+    }
+  ]
+}

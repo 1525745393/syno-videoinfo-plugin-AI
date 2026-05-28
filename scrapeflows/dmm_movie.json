@@ -1,0 +1,110 @@
+{
+  "type": "movie",
+  "site": "dmm.co.jp",
+  "doh_enabled": false,
+  "lang": ["ja"],
+  "config": {},
+  "steps": [
+    {
+      "http": {
+        "url": "https://www.dmm.co.jp/search/=/searchstr={title.replace('-', '00')}/sort=ranking/",
+        "method": "GET",
+        "result": "search_1"
+      }
+    },
+    {
+      "http": {
+        "url": "https://www.dmm.co.jp/search/=/searchstr={title.replace('-', '')}/sort=ranking/",
+        "method": "GET",
+        "result": "search_2",
+        "skip": "search_1"
+      }
+    },
+    {
+      "http": {
+        "url": "https://www.dmm.com/search/=/searchstr={title.replace('-', '')}/sort=ranking/",
+        "method": "GET",
+        "result": "search_3",
+        "skip": "search_2"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_1",
+        "into": {
+          "detail_url": ["xp_attr", "//a[contains(@href, '/detail/')][1]/@href"]
+        }
+      }
+    },
+    {
+      "collect": {
+        "source": "search_2",
+        "into": {
+          "detail_url": ["xp_attr", "//a[contains(@href, '/detail/')][1]/@href"]
+        },
+        "skip": "detail_url"
+      }
+    },
+    {
+      "collect": {
+        "source": "search_3",
+        "into": {
+          "detail_url": ["xp_attr", "//a[contains(@href, '/detail/')][1]/@href"]
+        },
+        "skip": "detail_url"
+      }
+    },
+    {
+      "http": {
+        "url": "{detail_url}",
+        "method": "GET",
+        "result": "detail_content"
+      }
+    },
+    {
+      "collect": {
+        "source": "detail_content",
+        "into": {
+          "title": ["xp_text", "//h1[@id='title']/text()", "//h1/text()"],
+          "originaltitle": ["xp_text", "//h1[@id='title']/text()", "//h1/text()"],
+          "actors": ["xp_text_all", "//td[@class='nw']/a/text()"],
+          "outline": ["xp_text", "//div[@class='mg-b20 lh4']/p/text()", "//div[contains(@class, 'text')]/p/text()"],
+          "originalplot": ["xp_text", "//div[@class='mg-b20 lh4']/p/text()", "//div[contains(@class, 'text')]/p/text()"],
+          "release": ["xp_text", "//table//tr[td[contains(text(), '発売日')]]/td[@class='w']/text()", "//td[contains(text(), '発売日')]/following-sibling::td/text()"],
+          "runtime": ["xp_text", "//table//tr[td[contains(text(), '収録時間')]]/td[@class='w']/text()", "//td[contains(text(), '収録時間')]/following-sibling::td/text()"],
+          "series": ["xp_text", "//table//tr[td[contains(text(), 'シリーズ')]]/td[@class='w']/a/text()", "//td[contains(text(), 'シリーズ')]/following-sibling::td/a/text()"],
+          "directors": ["xp_text_all", "//table//tr[td[contains(text(), '監督')]]/td[@class='w']/a/text()", "//td[contains(text(), '監督')]/following-sibling::td/a/text()"],
+          "studio": ["xp_text", "//table//tr[td[contains(text(), 'メーカー')]]/td[@class='w']/a/text()", "//td[contains(text(), 'メーカー')]/following-sibling::td/a/text()"],
+          "publisher": ["xp_text", "//table//tr[td[contains(text(), 'レーベル')]]/td[@class='w']/a/text()", "//td[contains(text(), 'レーベル')]/following-sibling::td/a/text()"],
+          "tags": ["xp_text_all", "//table//tr[td[contains(text(), 'ジャンル')]]/td[@class='w']/a/text()", "//td[contains(text(), 'ジャンル')]/following-sibling::td/a/text()"],
+          "thumb": ["xp_attr", "//div[@id='sample-video']/a/@href", "//div[@id='package']/a/img/@src"],
+          "poster": ["xp_attr", "//div[@id='sample-video']/a/@href", "//div[@id='package']/a/img/@src"],
+          "extrafanart": ["xp_attr_all", "//div[@id='sample-image-block']//a/@href", "//ul[@id='sample-image']//a/@href"],
+          "trailer": ["xp_attr", "//div[@id='sample-video']/a/@href"]
+        }
+      }
+    },
+    {
+      "retval": {
+        "title": "{title}",
+        "originaltitle": "{originaltitle}",
+        "actors": "{actors}",
+        "outline": "{outline}",
+        "originalplot": "{originalplot}",
+        "release": "{release.replace('/', '-')}",
+        "year": "{re.findall('\\\\d{4}', release)[0] if release and len(re.findall('\\\\d{4}', release)) > 0 else ''}",
+        "runtime": "{re.findall('\\\\d+', runtime)[0] if runtime and len(re.findall('\\\\d+', runtime)) > 0 else ''}",
+        "series": "{series}",
+        "directors": "{directors}",
+        "studio": "{studio}",
+        "publisher": "{publisher if publisher else studio}",
+        "tags": "{tags}",
+        "thumb": "{thumb if thumb.startswith('http') else ('https:' + thumb) if thumb.startswith('//') else ''}",
+        "poster": "{poster if poster.startswith('http') else ('https:' + poster) if poster.startswith('//') else ''}",
+        "extrafanart": "{[url if url.startswith('http') else ('https:' + url) if url.startswith('//') else '' for url in extrafanart]}",
+        "trailer": "{trailer}",
+        "mosaic": "有码"
+      }
+    }
+  ]
+}
