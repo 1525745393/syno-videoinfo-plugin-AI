@@ -1,69 +1,27 @@
 {
   "type": "movie",
-  "site": "airav.cc",
-  "doh_enabled": true,
+  "site": "airav.io",
+  "doh_enabled": false,
+  "lang": ["zh", "ja"],
+  "config": {},
   "steps": [
-    {
-      "http": {
-        "url": "https://www.airav.cc/search?q={title}",
-        "method": "GET",
-        "headers": {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8"
-        },
-        "result": "search_result"
-      }
-    },
-    {
-      "collect": {
-        "source": "search_result",
-        "into": {
-          "detail_urls": ["re_matches", "/video/[A-Za-z0-9_-]+"]
-        }
-      }
-    },
-    {
-      "loop": {
-        "source": "detail_urls",
-        "item": "detail_url",
-        "steps": [
-          {
-            "http": {
-              "url": "https://www.airav.cc{detail_url}",
-              "method": "GET",
-              "headers": {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-              },
-              "result": "detail_page"
-            }
-          },
-          {
-            "collect": {
-              "source": "detail_page",
-              "into": {
-                "movie": {
-                  "title": ["xp_text", "//meta[@property='og:title']/@content"],
-                  "original_available": ["xp_attr_content", "//meta[@property='video:release_date']/@content"],
-                  "summary": ["xp_attr_content", "//meta[@property='og:description']/@content"],
-                  "genre": ["xp_texts", "//a[contains(@href,'/tags/')]"],
-                  "actor": ["xp_texts", "//a[contains(@href,'/actresses/')]"],
-                  "extra": {
-                    "[plugin_id]": {
-                      "poster": ["xp_attr_content", "//meta[@property='og:image']/@content"],
-                      "number": ["xp_attr_content", "//meta[@property='video:duration']/@content"]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          {
-            "retval": {
-              "source": "movie"
-            }
-          }
-        ]
-      }
-    }
+    {"http": {"url": "https://airav.io/cn/search_result?kw={title}", "method": "GET", "result": "search_content"}},
+    {"collect": {"source": "search_content", "into": {"detail_url": ["xp_attr", "//div[@class='col oneVideo']//a[@href]/@href"]}}},
+    {"http": {"url": "https://airav.io{detail_url}", "method": "GET", "result": "detail_content"}},
+    {"collect": {"source": "detail_content", "into": {"title": ["xp_text", "//div[@class='video-title my-3']/h1/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"number": ["xp_text", "//*[contains(text(), '番號') or contains(text(), '番号')]//span/text()"]}}},
+    {"transform": {"expression": "title = title.replace('[' + number + ']', '').replace(number, '').strip() if number else title"}},
+    {"collect": {"source": "detail_content", "into": {"actor": ["xp_text", "//*[contains(text(), '女優') or contains(text(), '女优')]//a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"cover_json": ["xp_text", "//script[@type='application/ld+json']/text()"]}}},
+    {"transform": {"expression": "import json; cover_url = json.loads(cover_json).get('thumbnailUrl', [''])[0] if cover_json else ''"}},
+    {"collect": {"source": "detail_content", "into": {"tag": ["xp_text", "//*[contains(text(), '標籤') or contains(text(), '标籤')]//a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"studio": ["xp_text", "//*[contains(text(), '廠商') or contains(text(), '厂商')]//a/text()"]}}},
+    {"collect": {"source": "detail_content", "into": {"release": ["xp_text", "//i[@class='fa fa-clock me-2']/../text()"]}}},
+    {"transform": {"expression": "release = re.search(r'\\d{4}-\\d{2}-\\d{2}', release).group() if release else ''"}},
+    {"collect": {"source": "detail_content", "into": {"outline": ["xp_text", "//div[@class='video-info']/p/text()"]}}},
+    {"transform": {"expression": "outline = re.sub(r'[\\n\\t]', '', outline).split('*根据分发')[0].strip() if outline else ''"}},
+    {"collect": {"source": "detail_content", "into": {"series": ["xp_text", "//*[contains(text(), '系列')]//a/text()"]}}},
+    {"transform": {"expression": "mosaic = '无码' if ('无码' in tag or '無修正' in tag or '無码' in tag or 'uncensored' in tag.lower()) else '有码'"}},
+    {"retval": {"title": "{title}", "number": "{number}", "actors": ["split_csv", "{actor}"], "outline": "{outline}", "tags": ["split_csv", "{tag}"], "release": "{release}", "year": "{release[:4] if release else ''}", "series": "{series}", "studio": "{studio}", "thumb": "{cover_url}", "poster": "{cover_url}", "mosaic": "{mosaic}", "external_id": "https://airav.io{detail_url}"}}
   ]
 }
