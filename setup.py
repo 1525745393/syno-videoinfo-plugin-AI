@@ -9,8 +9,8 @@ from version import version
 # get the root directory of this plugin
 ROOT_DIR = Path(__file__).resolve().parent
 
-# use the name of the root directory as the plugin id
-PLUGIN_ID = ROOT_DIR.name
+# hardcode the correct plugin ID from git repository name
+PLUGIN_ID = "syno-videoinfo-plugin-AI"
 
 # write the INFO file for this plugin
 INFO_TMPL = """
