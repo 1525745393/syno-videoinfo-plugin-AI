@@ -1,4 +1,4 @@
-"""A simple HTTP server for configuration."""
+"""Enhanced HTTP server for configuration with source management UI."""
 import ast
 import http
 import json
@@ -17,6 +17,9 @@ _basedir = Path(__file__).resolve().parent
 _resolvers_conf = _basedir / "../resolvers.conf"
 _flows_conf = _basedir / "../scrapeflows.conf"
 _auth_conf = _basedir / "authorization"
+
+# add parent directory for imports
+sys.path.insert(0, str(_basedir / ".."))
 
 # initialize the templates
 with open(_basedir / "templates/config.html", "r", encoding="utf-8") as html:
@@ -117,6 +120,32 @@ def load_version():
     return ""
 
 
+def get_source_management_data():
+    """Get source management system data for API endpoints."""
+    try:
+        from scraper.source_management import init_sms, get_sms
+        source_groups_path = _basedir / "../source_groups.json"
+        if source_groups_path.exists():
+            sms = init_sms(str(source_groups_path))
+        else:
+            sms = init_sms()
+        
+        health = sms.get_health_report()
+        stats = sms.get_statistics()
+        
+        return {
+            "health": health,
+            "stats": stats,
+            "sources": list(stats.get("source_manager", {}),
+        }
+    except Exception as e:
+        return {
+            "health": {"total_sources": 0, "healthy": [], "warning": [], "error": [], "unknown": []},
+            "stats": {},
+            "error": str(e),
+        }
+
+
 # initialize the index page
 _index_html = render_index()
 
@@ -147,35 +176,131 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         if not self.do_AUTH():
             return
 
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
         if self.path == "/":
             # index page
             if _flows_conf.exists():
                 with open(_flows_conf, "r", encoding="utf-8") as conf_reader:
                     saved_conf = json.load(conf_reader)
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
                 self.wfile.write(render_index(saved_conf).encode("utf-8"))
             else:
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
                 self.wfile.write(_index_html.encode("utf-8"))
+
+        elif self.path == "/sourcemgmt":
+            # source management UI
+            try:
+                with open(_basedir / "templates/source_management.html", "r", encoding="utf-8") as html:
+                    self.send_response(200)
+                    self.send_header("Content-type", "text/html")
+                    self.end_headers()
+                    self.wfile.write(html.read().encode("utf-8"))
+            except Exception as e:
+                self.send_response(404)
+                self.send_header("Content-type", "text/plain")
+                self.end_headers()
+                self.wfile.write(b"Not Found")
+
+        elif self.path == "/api/health":
+            # health API endpoint
+            try:
+                data = get_source_management_data()
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(data).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif self.path == "/api/sources":
+            # sources API endpoint
+            try:
+                data = get_source_management_data()
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(data).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif self.path == "/api/history":
+            # history API endpoint
+            try:
+                from scraper.persistence import init_storage
+                storage = init_storage()
+                history = storage.get_history(limit=50)
+                records = []
+                for record in history[-50:]:
+                    records.append({
+                        "source": record.source,
+                        "timestamp": record.timestamp,
+                        "success": record.success,
+                        "duration": record.duration,
+                        "quality": record.quality,
+                        "number": record.number,
+                        "title": record.title,
+                    })
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"history": records}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif self.path == "/api/save":
+            # save data API endpoint
+            try:
+                from scraper.source_management import init_sms, get_sms
+                sms = get_sms()
+                sms.save()
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
 
         elif self.path == "/exit":
             # close the server
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"Shutting down...")
             self.server.server_close()
             sys.exit()
+
+        else:
+            # serve static files
+            super().do_GET()
 
     def do_POST(self):
         if not self.do_AUTH():
             return
 
-        self.send_response(200)
-        self.end_headers()
         content_length = int(self.headers["Content-Length"])
         request_body = self.rfile.read(content_length)
 
         if self.path == "/save":
             # save the configuration
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
             conf = json.loads(request_body.decode("utf-8"))
             with open(_flows_conf, "w", encoding="utf-8") as conf_writer:
                 conf_writer.write(json.dumps(
@@ -188,10 +313,62 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         elif self.path == "/auth":
             # save the authorization
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
             with open(_auth_conf, "w", encoding="utf-8") as auth_writer:
                 auth_writer.write(request_body.decode("utf-8"))
+
+        elif self.path == "/api/enable":
+            # enable source
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            try:
+                data = json.loads(request_body.decode("utf-8"))
+                source = data.get("source")
+                from scraper.source_management import init_sms, get_sms
+                sms = init_sms(str(_basedir / "../source_groups.json"))
+                sms.enable_source(source)
+                sms.save()
+                self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+            except Exception as e:
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif self.path == "/api/disable":
+            # disable source
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            try:
+                data = json.loads(request_body.decode("utf-8"))
+                source = data.get("source")
+                from scraper.source_management import init_sms, get_sms
+                sms = init_sms(str(_basedir / "../source_groups.json"))
+                sms.disable_source(source)
+                sms.save()
+                self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+            except Exception as e:
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif self.path == "/api/reset":
+            # reset source
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            try:
+                data = json.loads(request_body.decode("utf-8"))
+                source = data.get("source")
+                from scraper.source_management import init_sms, get_sms
+                sms = init_sms(str(_basedir / "../source_groups.json"))
+                sms.reset_source(source)
+                sms.save()
+                self.wfile.write(json.dumps({"success": True}).encode("utf-8"))
+            except Exception as e:
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
 
 
 if __name__ == "__main__":
     httpd = HTTPServer((HOST, PORT), RequestHandler)
+    print(f"Enhanced server running on http://{HOST}:{PORT}")
     httpd.serve_forever()

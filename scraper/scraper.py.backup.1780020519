@@ -1,4 +1,4 @@
-"""Enhanced scraper with source management integration."""
+"""Entry point for the scraper."""
 import argparse
 import json
 import logging
@@ -11,7 +11,6 @@ from scraper.enums import lang_type, video_type
 from scraper.exceptions import ScrapeError, StopSignal
 from scraper.fake import fake_result
 from scraper.functions import findfunc
-from scraper.source_management import init_sms, get_sms
 
 _logger = logging.getLogger(__name__)
 
@@ -24,27 +23,9 @@ _flowconf_path = _basedir / "../scrapeflows.conf"
 _maxlimit = 10
 _results: List[Any] = []
 
-# Initialize source management system
-_sms_initialized = False
-
-
-def _init_sms():
-    """Initialize source management system."""
-    global _sms_initialized
-    if not _sms_initialized:
-        try:
-            source_groups_path = _basedir / "../source_groups.json"
-            if source_groups_path.exists():
-                init_sms(str(source_groups_path))
-            else:
-                init_sms()
-            _sms_initialized = True
-        except Exception as e:
-            _logger.warning("Failed to initialize source management: %s", e)
-
 
 def scrape(plugin_id: str) -> str:
-    """Scrape video information with source management integration."""
+    """Scrape video information from given arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, required=True)
     parser.add_argument("--type", type=video_type, required=True)
@@ -52,15 +33,12 @@ def scrape(plugin_id: str) -> str:
     parser.add_argument("--limit", type=int, default=_maxlimit)
     parser.add_argument("--allowguess", action="store_true", default=False)
     parser.add_argument("--loglevel", type=str, default="critical")
-    parser.add_argument("--sms-enable", action="store_true", default=True,
-                       help="Enable source management system")
 
     args = parser.parse_known_args()[0]
     videotype = args.type.value
     language = args.lang.value if args.lang is not None else None
     maxlimit = min(args.limit, _maxlimit)
     loglevel = args.loglevel.upper()
-    use_sms = args.sms_enable
 
     # set basic logging configuration
     logformat = (
@@ -84,32 +62,14 @@ def scrape(plugin_id: str) -> str:
         "version": _version(plugin_id),
     }
 
-    # Initialize source management system if enabled
-    sms = None
-    if use_sms:
-        _init_sms()
-        try:
-            sms = get_sms()
-            _logger.info("Source management system initialized")
-        except Exception as e:
-            _logger.warning("Source management unavailable: %s", e)
-
-    # load and execute scrape flows using smart ordering
+    # load and execute scrape flows using multithreading
     start = time.time()
     taskqueue: Dict[int, List[threading.Thread]] = {}
-    
-    flows = list(ScrapeFlow.load(_flow_path, videotype, language, initialval))
-    
-    # Use source management to order flows if available
-    if sms:
-        flows = _order_flows(flows, initialval, sms)
-    
-    for flow in flows:
-        task = threading.Thread(target=_start, args=(flow, maxlimit, sms))
+    for flow in ScrapeFlow.load(_flow_path, videotype, language, initialval):
+        task = threading.Thread(target=_start, args=(flow, maxlimit))
         tasks = taskqueue.get(flow.priority, [])
         tasks.append(task)
         taskqueue[flow.priority] = tasks
-    
     for tasks in dict(sorted(taskqueue.items(), key=lambda x: x[0])).values():
         if len(_results) >= maxlimit:
             break
@@ -117,110 +77,26 @@ def scrape(plugin_id: str) -> str:
             task.start()
         for task in tasks:
             task.join()
-    
     end = time.time()
     _logger.info("Total execution time: %.3f seconds", end - start)
-    
-    # Save source management data
-    if sms:
-        try:
-            sms.save()
-            _logger.info("Source management data saved")
-        except Exception as e:
-            _logger.warning("Failed to save source management data: %s", e)
-    
     return json.dumps(
         {"success": True, "result": _results}, ensure_ascii=False, indent=2
     ).replace("[plugin_id]", plugin_id)
 
 
-def _order_flows(flows: List["ScrapeFlow"], initialval: Dict, sms) -> List["ScrapeFlow"]:
-    """Order flows using source management system."""
-    if not flows:
-        return flows
-    
-    # Get content hint for optimization
-    content_hint = initialval.get("title", "")
-    
-    # Get optimal source order
-    optimal_sources = sms.get_optimal_sources(
-        video_type=initialval.get("type", "movie"),
-        content_hint=content_hint,
-        limit=len(flows)
-    )
-    
-    if not optimal_sources:
-        return flows
-    
-    # Create source to flow map
-    source_flow_map = {flow.site: flow for flow in flows}
-    
-    # Order flows by optimal source order first, then remaining
-    ordered_flows = []
-    for source in optimal_sources:
-        if source in source_flow_map:
-            ordered_flows.append(source_flow_map.pop(source))
-    
-    # Add remaining flows
-    ordered_flows.extend(source_flow_map.values())
-    
-    _logger.info(
-        "Ordered %d flows using source management, %d optimal, %d remaining",
-        len(flows),
-        len(ordered_flows) - len(source_flow_map),
-        len(source_flow_map)
-    )
-    
-    return ordered_flows
-
-
-def _start(flow: "ScrapeFlow", limit: int, sms=None):
-    """Start a scrape flow and store results with source tracking."""
-    start_time = time.time()
-    success = False
-    num_results = 0
-    
+def _start(flow: "ScrapeFlow", limit: int):
+    """Start a scrape flow and store results."""
     try:
         result_gen = flow.start()
         while True:
             if len(_results) >= limit:
-                success = num_results > 0
                 break
             try:
-                result = next(result_gen)
-                _results.append(result)
-                num_results += 1
+                _results.append(next(result_gen))
             except StopIteration:
-                success = num_results > 0
                 break
     except ScrapeError:
         _logger.error("Failed to scrape from %s", flow.site, exc_info=True)
-    except Exception as e:
-        _logger.error("Unexpected error scraping %s: %s", flow.site, e)
-    finally:
-        duration = time.time() - start_time
-        
-        # Record scrape result with source management
-        if sms:
-            try:
-                data = {"title": flow.site, "number": flow.context.get("title", "")}
-                if num_results > 0 and _results:
-                    data = _results[-num_results] if num_results == 1 else _results[-1]
-                
-                sms.record_scrape(
-                    source=flow.site,
-                    success=success,
-                    duration=duration,
-                    data=data
-                )
-                _logger.debug(
-                    "Scrape recorded: %s, success=%s, duration=%.2fs",
-                    flow.site,
-                    success,
-                    duration
-                )
-            except Exception as e:
-                _logger.warning("Failed to record scrape: %s", e)
 
 
 def _version(plugin_id: str) -> str:
